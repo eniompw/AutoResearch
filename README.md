@@ -17,7 +17,7 @@ A small automated ML research loop.
 
 | File | Purpose |
 |---|---|
-| `mlp_lm.py` | Small character-level MLP trained on TinyStories |
+| `mlp_lm.py` | Current best model (updated each accepted round) |
 | `mlp_lm_base.py` | Original unmodified baseline model |
 | `tinystories_dataset.py` | Loads TinyStories and creates context-target pairs |
 | `orchestrator.py` | Calls GLM-5.2, runs experiments, and saves results |
@@ -33,14 +33,16 @@ A small automated ML research loop.
 
 ```python
 import os
-os.environ["MAX_ROUNDS"] = "1"   # Set to 1 for a quick test; remove or increase for a full run
+os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
-!git clone https://github.com/eniompw/AutoResearch.git
-#  !git pull --ff-only origin main
+!git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
+#!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
 %cd AutoResearch
-!pip install -q openai
+!pip install -q openai  # First run only — comment out after
 !python orchestrator.py
 ```
+
+`results.json` and `mlp_lm.py` persist across Kaggle sessions. The stash/pull/pop pattern updates source files while preserving your local experiment results.
 
 Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2).
 
@@ -54,21 +56,20 @@ Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-
 
 ## Debugging
 
-Check experiment history (shows successes and failures):
+Check experiment history:
 
 ```python
 import json
 print(json.load(open('/kaggle/working/AutoResearch/results.json')))
 ```
 
-Reset and re-run from scratch:
+Reset to baseline and start fresh:
 
 ```python
 import os, shutil
 shutil.rmtree('/kaggle/working/AutoResearch')
 !git clone https://github.com/eniompw/AutoResearch.git
 os.chdir('/kaggle/working/AutoResearch')
-!pip install -q openai
 !python orchestrator.py
 ```
 
@@ -85,7 +86,7 @@ Override `orchestrator.py` settings via environment variables:
 
 ```python
 import os
-os.environ["MAX_ROUNDS"] = "1"   # Default: 20 — set to 1 for a quick debug run
+os.environ["MAX_ROUNDS"] = "3"   # Default: 20
 os.environ["PATIENCE"] = "2"     # Default: 4 — stop after this many non-improving experiments
 ```
 
@@ -106,6 +107,7 @@ Lower training loss is better. A candidate is accepted only when its loss beats 
 
 ## Notes
 
+- `results.json` and `mlp_lm.py` persist across Kaggle sessions — no need to push to git.
 - Experiments run sequentially inside one Kaggle notebook session.
 - This is an educational project, not a rigorous benchmark.
 - The baseline uses training loss and training accuracy; it does not yet use a validation split.
