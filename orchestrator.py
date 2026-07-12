@@ -11,6 +11,7 @@ except ImportError:
 MAX_ROUNDS = int(os.environ.get("MAX_ROUNDS", 20))               # Set MAX_ROUNDS env var to override (e.g. 1 for debug)
 PATIENCE = 4                                                     # Stop after this many rounds without improvement
 LOG_FILE = Path("results.json")                                  # Experiment history (round 0 = baseline)
+SAMPLE_LEN = 128                                                 # Chars of generated text to save per entry
 
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",              # NVIDIA API endpoint
@@ -93,7 +94,14 @@ def run(code):
     final = [l for l in result.stdout.splitlines() if l.startswith("FINAL")][-1]
     loss   = float(re.search(r"Loss: ([\d.]+)",  final).group(1))
     epochs = int(re.search(r"Epochs: (\d+)",     final).group(1))
-    return loss, epochs
+
+    # Extract up to SAMPLE_LEN chars of generated text (lines after FINAL marker)
+    lines = result.stdout.splitlines()
+    final_idx = max(i for i, l in enumerate(lines) if l.startswith("FINAL"))
+    sample_lines = [l for l in lines[final_idx+1:] if l.strip()]
+    sample = " ".join(sample_lines)[:SAMPLE_LEN] if sample_lines else ""
+
+    return loss, epochs, sample
 
 def main():
     log = json.loads(LOG_FILE.read_text())
@@ -122,7 +130,7 @@ def main():
             continue
 
         try:
-            loss, epochs = run(candidate_code)
+            loss, epochs, sample = run(candidate_code)
         except Exception as e:
             print(f"Round {round_num} code crashed: {e}")
             log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"run: {e}"})
@@ -131,13 +139,13 @@ def main():
 
         best_loss = min(r["loss"] for r in log if "loss" in r)   # Includes baseline
         if loss < best_loss:
-            log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "epochs": epochs})
+            log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "epochs": epochs, "sample": sample})
             LOG_FILE.write_text(json.dumps(log, indent=2))
             print(f"Loss: {loss:.4f} | Epochs: {epochs} | Accepted")
             best_code = candidate_code
             Path("mlp_lm.py").write_text(best_code)              # Persist new best
         else:
-            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | epochs: {epochs}"})
+            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | epochs: {epochs}", "sample": sample})
             LOG_FILE.write_text(json.dumps(log, indent=2))
             print(f"Loss: {loss:.4f} | Epochs: {epochs} | Rejected")
 
