@@ -34,15 +34,20 @@ def plateau(log):
 
 def ask_model(code, log):
     print("[llm] Sending request...", flush=True)
+
+    # Only send failed/rejected attempts — the current best code already shows what works
+    failures = [r for r in log if "error" in r or not r.get("improved", True)]
+    recent_failures = failures[-10:]                             # Last 10 failures gives broad avoidance context
+
     prompt = f"""Improve this small MLP language model with ONE small change.
 
-Current code:
+Current best code (infer what already works from this):
 ```python
 {code}
 ```
 
-Recent results:
-{json.dumps(log[-5:], indent=2)}
+Failed/rejected attempts to AVOID repeating:
+{json.dumps(recent_failures, indent=2)}
 
 Return exactly this format:
 
