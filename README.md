@@ -7,9 +7,9 @@ A small automated ML research loop.
 ## How it works
 
 1. GLM-5.2 reads `mlp_lm.py` and recent experiment results
-2. It suggests one small code change
+2. It suggests one small code change and explains the idea
 3. The candidate trains for 60 seconds on Kaggle GPU
-4. Loss and accuracy are saved to `results.json`
+4. The idea, loss, and accuracy are saved to `results.json`
 5. Better candidates replace `mlp_lm.py`
 6. The loop stops after 4 experiments without a new best loss
 
@@ -41,13 +41,13 @@ Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-
 
 ## Settings
 
-Edit these values in `mlp_lm.py`:
+Edit `mlp_lm.py`:
 
 ```python
 TRAIN_SECONDS = 60  # Training time for every experiment
 ```
 
-Edit these values in `orchestrator.py`:
+Edit `orchestrator.py`:
 
 ```python
 MAX_ROUNDS = 20  # Maximum experiments per run
@@ -58,11 +58,12 @@ Keep `TRAIN_SECONDS` fixed during one run. Otherwise, a candidate could appear b
 
 ## Results
 
-Each successful experiment is added to `results.json`:
+Each successful experiment is saved to `results.json`:
 
 ```json
 {
   "round": 3,
+  "idea": "Replace ReLU with GELU to improve hidden-layer gradients.",
   "loss": 1.8234,
   "acc": 0.412,
   "improved": true
@@ -76,4 +77,4 @@ Lower training loss is better. A candidate is accepted only when its loss is low
 - Experiments run sequentially inside one Kaggle notebook session.
 - This is an educational project, not a rigorous benchmark.
 - The baseline uses training loss and training accuracy; it does not yet use a validation split.
-- GLM-5.2 is asked to change one idea at a time, but inspect accepted code before relying on it.
+- Inspect accepted code before relying on it.
