@@ -47,11 +47,19 @@ Edit `mlp_lm.py`:
 TRAIN_SECONDS = 60  # Training time for every experiment
 ```
 
-Edit `orchestrator.py`:
+Override `orchestrator.py` settings via environment variables (useful on Kaggle where editing files is awkward):
 
 ```python
-MAX_ROUNDS = 20  # Maximum experiments per run
-PATIENCE = 4     # Stop after this many non-improving experiments
+import os
+os.environ["MAX_ROUNDS"] = "1"   # Default: 20 — set to 1 for a quick debug run
+os.environ["PATIENCE"] = "2"     # Default: 4 — stop after this many non-improving experiments
+```
+
+Or edit `orchestrator.py` directly:
+
+```python
+MAX_ROUNDS = int(os.environ.get("MAX_ROUNDS", 20))  # Maximum experiments per run
+PATIENCE = 4                                         # Stop after this many non-improving experiments
 ```
 
 Keep `TRAIN_SECONDS` fixed during one run. Otherwise, a candidate could appear better simply because it trained longer.
