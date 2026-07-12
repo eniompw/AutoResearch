@@ -48,6 +48,32 @@ Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-
 > ```
 > Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
 
+## Debugging
+
+Check experiment history (shows successes and failures):
+
+```python
+import json
+print(json.load(open('/kaggle/working/AutoResearch/results.json')))
+```
+
+Confirm the latest `orchestrator.py` is loaded (should include `time` in imports):
+
+```python
+!head -1 /kaggle/working/AutoResearch/orchestrator.py
+```
+
+Reset and re-run from scratch:
+
+```python
+import os, shutil
+shutil.rmtree('/kaggle/working/AutoResearch')
+!git clone https://github.com/eniompw/AutoResearch.git
+os.chdir('/kaggle/working/AutoResearch')
+!pip install -q openai
+!python orchestrator.py
+```
+
 ## Settings
 
 Edit `mlp_lm.py`:
