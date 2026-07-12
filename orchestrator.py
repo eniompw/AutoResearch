@@ -1,4 +1,4 @@
-import json, os, re, subprocess, sys
+import json, os, re, subprocess, sys, time
 from pathlib import Path
 from openai import OpenAI
 
@@ -22,6 +22,7 @@ print(f"[init] MAX_ROUNDS={MAX_ROUNDS} | PATIENCE={PATIENCE} | LOG_FILE={LOG_FIL
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",              # NVIDIA API endpoint
     api_key=API_KEY,                                             # NVIDIA API key
+    timeout=120,                                                 # 120s hard timeout on API calls
 )
 
 # --- Helpers ---
@@ -41,7 +42,7 @@ def plateau(log):
     return len(losses) > PATIENCE and min(losses[-PATIENCE:]) >= min(losses[:-PATIENCE])  # No new best loss
 
 def ask_model(code, log):
-    print("[llm] Sending request to GLM-5.2...")
+    print("[llm] Sending streaming request to GLM-5.2...", flush=True)
     prompt = f"""Improve this small MLP language model with ONE small change.
 
 Current code:
@@ -65,17 +66,36 @@ Rules:
 - Keep the FINAL | Loss: ... | Acc: ... output line
 - Change one idea only
 """
-    response = client.chat.completions.create(
+    t0 = time.time()
+    chunks = []
+    tokens = 0
+    stream = client.chat.completions.create(
         model="z-ai/glm-5.2",                                    # NVIDIA-hosted GLM-5.2
         messages=[{"role": "user", "content": prompt}],          # Send code + past results
         temperature=0.5,                                         # Prefer focused suggestions
         max_tokens=8192,                                         # Enough room for full script
+        stream=True,                                             # Stream tokens as they arrive
     )
 
-    text = response.choices[0].message.content                   # Read model reply
-    print(f"[llm] Response received ({len(text)} chars)")
-    idea = re.search(r"IDEA:\s*(.+)", text).group(1).strip()     # Extract one-line hypothesis
-    code = re.search(r"```python\s*(.*?)```", text, re.S).group(1).strip()  # Extract candidate code
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content or ""
+        chunks.append(delta)
+        tokens += 1
+        if tokens % 50 == 0:                                     # Print a dot every 50 tokens
+            print(f"[llm] ...{tokens} tokens ({time.time()-t0:.0f}s)", flush=True)
+
+    text = "".join(chunks)
+    print(f"[llm] Response complete: {tokens} tokens in {time.time()-t0:.1f}s ({len(text)} chars)", flush=True)
+
+    idea_match = re.search(r"IDEA:\s*(.+)", text)
+    code_match = re.search(r"```python\s*(.*?)```", text, re.S)
+    if not idea_match:
+        raise ValueError(f"[llm] No IDEA: line found in response. Raw response:\n{text[:500]}")
+    if not code_match:
+        raise ValueError(f"[llm] No python code block found in response. Raw response:\n{text[:500]}")
+
+    idea = idea_match.group(1).strip()
+    code = code_match.group(1).strip()
     print(f"[llm] Idea: {idea}")
     print(f"[llm] Extracted code ({len(code)} chars)")
     return idea, code
@@ -86,8 +106,8 @@ def run(code):
         raise ValueError("TRAIN_SECONDS must remain 60.")        # Reject unfair time budget
 
     Path("current_experiment.py").write_text(code)               # Save proposed experiment
-    print(f"[run] Saved current_experiment.py ({len(code)} chars)")
-    print(f"[run] Launching subprocess: {sys.executable} current_experiment.py")
+    print(f"[run] Saved current_experiment.py ({len(code)} chars)", flush=True)
+    print(f"[run] Launching subprocess: {sys.executable} current_experiment.py", flush=True)
 
     result = subprocess.run(
         [sys.executable, "current_experiment.py"],                # Run in current Kaggle session
@@ -96,8 +116,8 @@ def run(code):
         timeout=90,                                               # 60s training + startup margin
     )
 
-    print(f"[run] Subprocess finished (returncode={result.returncode})")
-    print(result.stdout)                                          # Show training progress
+    print(f"[run] Subprocess finished (returncode={result.returncode})", flush=True)
+    print(result.stdout)
     if result.stderr:
         print(f"[run] stderr:\n{result.stderr[-500:]}")
     if result.returncode:
@@ -125,12 +145,12 @@ def main():
         print(f"[main] Starting Round {round_num}/{MAX_ROUNDS}")
 
         if plateau(log):
-            print("[main] Plateau reached — no improvement in last {PATIENCE} rounds.")
+            print(f"[main] Plateau reached — no improvement in last {PATIENCE} rounds.")
             break
 
         try:
             idea, candidate_code = ask_model(best_code, log)     # Ask GLM for hypothesis + code
-            print(f"\nRound {round_num}: {idea}")                # Show tested idea
+            print(f"\nRound {round_num}: {idea}")
             loss, acc = run(candidate_code)                      # Run proposed experiment
 
             old_losses = [r["loss"] for r in log if "loss" in r] # Earlier successful losses
@@ -145,7 +165,7 @@ def main():
             })
             save_log(log)                                        # Persist result before next round
 
-            print(f"Loss: {loss:.4f} | Acc: {acc:.1%}")          # Short experiment summary
+            print(f"Loss: {loss:.4f} | Acc: {acc:.1%}")
 
             if improved:
                 best_code = candidate_code                       # Use winner as next baseline
@@ -155,7 +175,7 @@ def main():
                 print("Rejected.")
 
         except Exception as error:
-            print(f"Round {round_num} failed: {error}")          # Continue after invalid proposals
+            print(f"Round {round_num} failed: {error}")
             log.append({"round": round_num, "error": str(error)})
             save_log(log)
 
