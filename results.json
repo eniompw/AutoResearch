@@ -1,9 +1,9 @@
 [
   {
     "round": 0,
+    "status": "success",
     "idea": "baseline",
     "loss": 2.6551,
-    "acc": 0.2598,
-    "improved": false
+    "epochs": 0
   }
 ]

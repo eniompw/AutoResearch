@@ -28,6 +28,7 @@ model = nn.Sequential(
 
 # --- Train ---
 start_time = time.time()                                                 # Begin fixed experiment timer
+epoch = 0                                                                # Ensure epoch is defined if loop is skipped
 
 for epoch in range(EPOCHS):
     logits = model(inputs)                                               # Predict next-character scores
@@ -40,15 +41,13 @@ for epoch in range(EPOCHS):
             p.grad.zero_()                                               # Clear gradients before next epoch
 
     if epoch % LOG_EVERY == 0:
-        acc = (logits.argmax(1) == targets).float().mean()               # Fraction of correct next-character predictions
-        print(f"Epoch {epoch:5d} | Loss: {loss:.3f} | Acc: {acc:.1%}")  # Show learning progress
+        print(f"Epoch {epoch:5d} | Loss: {loss:.3f}")                    # Show learning progress
 
     if time.time() - start_time >= TRAIN_SECONDS:                        # Stop at the shared experiment budget
         break
 
 # --- Final metrics ---
-acc = (logits.argmax(1) == targets).float().mean()                       # Final training accuracy
-print(f"FINAL | Loss: {loss:.6f} | Acc: {acc:.2%}")                      # Parsed by orchestrator
+print(f"FINAL | Loss: {loss:.6f} | Epochs: {epoch+1}")                   # Parsed by orchestrator
 
 # --- Generate ---
 context = inputs[0].tolist()                                              # First training context is generation seed

@@ -20,8 +20,8 @@ client = OpenAI(
 
 def load_log():
     log = json.loads(LOG_FILE.read_text())                       # results.json ships with baseline as round 0
-    successes = sum(1 for r in log if "loss" in r)
-    failures  = sum(1 for r in log if "error" in r)
+    successes = sum(1 for r in log if r.get("status") == "success")
+    failures  = sum(1 for r in log if r.get("status") == "failure")
     print(f"[log] {len(log)} entries ({successes} succeeded, {failures} failed)")
     return log
 
@@ -29,14 +29,13 @@ def save_log(log):
     LOG_FILE.write_text(json.dumps(log, indent=2))
 
 def plateau(log):
-    losses = [r["loss"] for r in log if "loss" in r and r.get("round", 1) > 0]  # Exclude baseline (round 0)
+    losses = [r["loss"] for r in log if r.get("status") == "success"]
     return len(losses) > PATIENCE and min(losses[-PATIENCE:]) >= min(losses[:-PATIENCE])
 
 def ask_model(code, log):
     print("[llm] Sending request...", flush=True)
 
-    # Only send failed/rejected attempts — the current best code already shows what works
-    failures = [r for r in log if "error" in r or not r.get("improved", True)]
+    failures = [r for r in log if r.get("status") == "failure"]
     recent_failures = failures[-10:]                             # Last 10 failures gives broad avoidance context
 
     prompt = f"""Improve this small MLP language model with ONE small change.
@@ -59,7 +58,7 @@ complete replacement code
 Rules:
 - Keep TRAIN_SECONDS = 60
 - Keep torch.manual_seed(42)
-- Keep the FINAL | Loss: ... | Acc: ... output line
+- Keep the FINAL | Loss: ... | Epochs: ... output line
 - Change one idea only
 """
     t0 = time.time()
@@ -105,9 +104,9 @@ def run(code):
         raise RuntimeError(result.stderr[-500:])
 
     final = [l for l in result.stdout.splitlines() if l.startswith("FINAL")][-1]
-    loss = float(re.search(r"Loss: ([\d.]+)", final).group(1))
-    acc  = float(re.search(r"Acc: ([\d.]+)%",  final).group(1)) / 100
-    return loss, acc
+    loss   = float(re.search(r"Loss: ([\d.]+)",  final).group(1))
+    epochs = int(re.search(r"Epochs: (\d+)",     final).group(1))
+    return loss, epochs
 
 def main():
     log = load_log()
@@ -128,23 +127,31 @@ def main():
         try:
             idea, candidate_code = ask_model(best_code, log)
             print(f"Idea: {idea}")
-            loss, acc = run(candidate_code)
-
-            best_loss = min(r["loss"] for r in log if "loss" in r)  # Includes baseline
-            improved  = loss < best_loss
-
-            log.append({"round": round_num, "idea": idea, "loss": loss, "acc": acc, "improved": improved})
-            save_log(log)
-            print(f"Loss: {loss:.4f} | Acc: {acc:.1%} | {'Accepted' if improved else 'Rejected'}")
-
-            if improved:
-                best_code = candidate_code
-                Path("mlp_lm.py").write_text(best_code)           # Persist new best
-
         except Exception as e:
-            print(f"Round {round_num} failed: {e}")
-            log.append({"round": round_num, "error": str(e)})
+            print(f"Round {round_num} LLM failed: {e}")
+            log.append({"round": round_num, "status": "failure", "reason": f"llm: {e}"})
             save_log(log)
+            continue
+
+        try:
+            loss, epochs = run(candidate_code)
+        except Exception as e:
+            print(f"Round {round_num} code crashed: {e}")
+            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"run: {e}"})
+            save_log(log)
+            continue
+
+        best_loss = min(r["loss"] for r in log if "loss" in r)   # Includes baseline
+        if loss < best_loss:
+            log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "epochs": epochs})
+            save_log(log)
+            print(f"Loss: {loss:.4f} | Epochs: {epochs} | Accepted")
+            best_code = candidate_code
+            Path("mlp_lm.py").write_text(best_code)              # Persist new best
+        else:
+            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f}"})
+            save_log(log)
+            print(f"Loss: {loss:.4f} | Epochs: {epochs} | Rejected")
 
 if __name__ == "__main__":
     main()
