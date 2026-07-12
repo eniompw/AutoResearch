@@ -35,17 +35,24 @@ def plateau(log):
 def ask_model(code, log):
     print("[llm] Sending request...", flush=True)
 
-    failures = [r for r in log if r.get("status") == "failure"]
-    recent_failures = failures[-10:]                             # Last 10 failures gives broad avoidance context
+    recent_successes = [r for r in log if r.get("status") == "success"][-5:]
+    recent_failures  = [r for r in log if r.get("status") == "failure"][-5:]
 
     prompt = f"""Improve this small MLP language model with ONE small change.
+
+IMPORTANT: All experiments run with a fixed 60-second training budget (TRAIN_SECONDS = 60).
+The 'epochs' field shows how many epochs completed in that time.
+A low epoch count means the change made training much slower — avoid ideas that reduce epochs significantly.
 
 Current best code (infer what already works from this):
 ```python
 {code}
 ```
 
-Failed/rejected attempts to AVOID repeating:
+Last 5 successful improvements (use epochs to judge training speed):
+{json.dumps(recent_successes, indent=2)}
+
+Last 5 failed/rejected attempts to AVOID repeating:
 {json.dumps(recent_failures, indent=2)}
 
 Return exactly this format:
@@ -149,7 +156,7 @@ def main():
             best_code = candidate_code
             Path("mlp_lm.py").write_text(best_code)              # Persist new best
         else:
-            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f}"})
+            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | epochs: {epochs}"})
             save_log(log)
             print(f"Loss: {loss:.4f} | Epochs: {epochs} | Rejected")
 
