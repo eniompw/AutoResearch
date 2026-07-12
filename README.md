@@ -89,9 +89,9 @@ Each experiment is saved to `results.json` with a `status` of `success` or `fail
     "round": 0,
     "status": "success",
     "idea": "baseline",
-    "loss": 2.6551,
-    "steps": 17701,
-    "sample": " the toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe t"
+    "loss": 0.747585,
+    "steps": 29224,
+    "sample": "d Sue. Tom learn maked turt, wherse'r mad. But ams net a mokey, \"We, al Lily wanter to the pawlins far toorsunntice.\"\nThe keve carmy. Ben sals whe playef, and fonenddy theme tikes.Once unon whel warm"
   }
 ]
 ```
