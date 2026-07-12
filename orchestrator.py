@@ -29,7 +29,9 @@ client = OpenAI(
 def load_log():
     if LOG_FILE.exists():
         log = json.loads(LOG_FILE.read_text())
-        print(f"[log] Resumed {len(log)} previous experiments from {LOG_FILE}")
+        successes = sum(1 for r in log if "loss" in r)
+        failures = sum(1 for r in log if "error" in r)
+        print(f"[log] Resumed {len(log)} previous experiments ({successes} succeeded, {failures} failed) from {LOG_FILE}")
         return log
     print("[log] No previous results found, starting fresh")
     return []
@@ -81,7 +83,7 @@ Rules:
         delta = chunk.choices[0].delta.content or ""
         chunks.append(delta)
         tokens += 1
-        if tokens % 50 == 0:                                     # Print a dot every 50 tokens
+        if tokens % 50 == 0:                                     # Print progress every 50 tokens
             print(f"[llm] ...{tokens} tokens ({time.time()-t0:.0f}s)", flush=True)
 
     text = "".join(chunks)
@@ -140,9 +142,12 @@ def main():
     best_code = mlp_path.read_text()                              # Start from current best code
     print(f"[main] Base model loaded ({len(best_code)} chars)")
 
-    for round_num in range(len(log) + 1, MAX_ROUNDS + 1):
+    rounds_done = max((r["round"] for r in log), default=0)      # Highest round number attempted (success or fail)
+    print(f"[main] Rounds already attempted: {rounds_done} | Remaining: {MAX_ROUNDS - rounds_done}")
+
+    for round_num in range(rounds_done + 1, MAX_ROUNDS + 1):
         print(f"\n{'='*50}")
-        print(f"[main] Starting Round {round_num}/{MAX_ROUNDS}")
+        print(f"[main] Starting Round {round_num}/{MAX_ROUNDS}", flush=True)
 
         if plateau(log):
             print(f"[main] Plateau reached — no improvement in last {PATIENCE} rounds.")
