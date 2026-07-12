@@ -41,14 +41,17 @@ Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to 
 import os
 os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
+%cd /kaggle/working
 !git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
 #!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
-%cd AutoResearch
+%cd /kaggle/working/AutoResearch
 !pip install -q openai  # First run only — comment out after
 !python orchestrator.py
 ```
 
 `results.json` and `mlp_lm.py` persist across Kaggle sessions. The stash/pull/pop pattern updates source files while preserving your local experiment results.
+
+Always `%cd /kaggle/working` before `git clone` so the kernel's working directory exists regardless of which cell was run last. Using absolute paths for `%cd` avoids `getcwd` errors if the notebook was previously inside `AutoResearch`.
 
 ## GPU Compatibility
 
