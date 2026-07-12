@@ -66,10 +66,11 @@ print(json.load(open('/kaggle/working/AutoResearch/results.json')))
 Reset to baseline and start fresh:
 
 ```python
-import os, shutil
+import shutil
 shutil.rmtree('/kaggle/working/AutoResearch')
 !git clone https://github.com/eniompw/AutoResearch.git
-os.chdir('/kaggle/working/AutoResearch')
+%cd AutoResearch
+!pip install -q openai
 !python orchestrator.py
 ```
 
