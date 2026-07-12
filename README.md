@@ -17,11 +17,11 @@ A small automated ML research loop.
 
 | File | Purpose |
 |---|---|
-| `mlp_lm.py` | Current best model (updated each accepted round) |
-| `mlp_lm_base.py` | Original unmodified baseline model |
+| `mlp_lm.py` | Current experiment file (intentionally bad hyperparams — AutoResearch optimises from here) |
+| `mlp_lm_base.py` | Original unmodified baseline model (good hyperparams, loss ~0.75) |
 | `tinystories_dataset.py` | Loads TinyStories and creates context-target pairs |
 | `orchestrator.py` | Calls GLM-5.2, runs experiments, and saves results |
-| `results.json` | Experiment history — pre-seeded with round 0 baseline |
+| `results.json` | Experiment history — round 0 is the good baseline, round 1 is the bad-hyperparams starting point |
 
 ## Run on Kaggle
 
@@ -81,7 +81,7 @@ Keep `TRAIN_SECONDS` fixed during one run. Otherwise, a candidate could appear b
 
 ## Results
 
-Each experiment is saved to `results.json` with a `status` of `success` or `failure`. Round 0 is the pre-seeded baseline:
+Each experiment is saved to `results.json` with a `status` of `success` or `failure`. Round 0 is the pre-seeded good baseline; round 1 is the intentionally bad-hyperparams starting point that AutoResearch optimises from:
 
 ```json
 [
@@ -91,12 +91,36 @@ Each experiment is saved to `results.json` with a `status` of `success` or `fail
     "idea": "baseline",
     "loss": 0.747585,
     "steps": 29224,
-    "sample": "d Sue. Tom learn maked turt, wherse'r mad. But ams net a mokey, \"We, al Lily wanter to the pawlins far toorsunntice.\"\nThe keve carmy. Ben s"
+    "sample": "d Sue. Tom learn maked turt, wherse'r mad. But ams net a mokey, ..."
+  },
+  {
+    "round": 1,
+    "status": "success",
+    "idea": "bad_hyperparams_baseline",
+    "loss": 2.664546,
+    "steps": 29988,
+    "sample": " tu wri ya b Th puulti ilihdslda. adn tadle ti. li n ..."
   }
 ]
 ```
 
 Lower training loss is better. A candidate is accepted only when its loss beats all previous experiments including the baseline. The `steps` field shows how many gradient steps completed in 60 seconds — a low value means the change made training significantly slower. The `sample` field holds the first 128 characters of generated text, giving a quick qualitative check of output coherence alongside the loss metric.
+
+## Bad Hyperparams Starting Point
+
+`mlp_lm.py` is seeded with these intentionally poor values for AutoResearch to discover and fix:
+
+| Parameter | Bad Value | Good Range |
+|---|---|---|
+| `CONTEXT_SIZE` | `4` | `16` – `64` |
+| `EMBED_SIZE` | `8` | `32` – `128` |
+| `HIDDEN_SIZE` | `16` | `64` – `512` |
+| `BATCH_SIZE` | `8` | `128` – `512` |
+| `LR` | `1e-1` | `1e-4` – `3e-3` |
+| `ACT` | `nn.Sigmoid` | `nn.ReLU`, `nn.GELU`, `nn.SiLU` |
+| `TEMP` | `1.0` | `0.6` – `0.9` |
+
+The reference good-hyperparams model is preserved in `mlp_lm_base.py` (loss ~0.75).
 
 ## Debugging
 
