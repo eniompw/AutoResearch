@@ -17,7 +17,10 @@ MAX_ROUNDS = int(os.environ.get("MAX_ROUNDS", 20))               # Set MAX_ROUND
 PATIENCE = 4                                                     # Stop after this many failed experiments
 LOG_FILE = Path("results.json")                                  # Saved experiment history
 
+BASELINE = {"round": 0, "idea": "baseline", "loss": 2.6551, "acc": 0.2598, "improved": False}  # mlp_lm_base.py result
+
 print(f"[init] MAX_ROUNDS={MAX_ROUNDS} | PATIENCE={PATIENCE} | LOG_FILE={LOG_FILE}")
+print(f"[init] Baseline: loss={BASELINE['loss']} acc={BASELINE['acc']:.1%}")
 
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",              # NVIDIA API endpoint
@@ -33,8 +36,10 @@ def load_log():
         failures = sum(1 for r in log if "error" in r)
         print(f"[log] Resumed {len(log)} previous experiments ({successes} succeeded, {failures} failed) from {LOG_FILE}")
         return log
-    print("[log] No previous results found, starting fresh")
-    return []
+    log = [BASELINE]                                             # Seed log with hardcoded baseline as round 0
+    save_log(log)
+    print(f"[log] No previous results found — seeded log with baseline (loss={BASELINE['loss']})")
+    return log
 
 def save_log(log):
     LOG_FILE.write_text(json.dumps(log, indent=2))               # Save results after each experiment
@@ -131,31 +136,9 @@ def run(code):
     print(f"[run] Parsed: loss={loss:.4f} acc={acc:.1%}")
     return loss, acc
 
-def run_baseline(log, base_code):
-    """Run mlp_lm_base.py as round 0 to establish a baseline score."""
-    if any(r.get("round") == 0 for r in log):                    # Skip if baseline already recorded
-        baseline_loss = next(r["loss"] for r in log if r.get("round") == 0)
-        print(f"[baseline] Already recorded: loss={baseline_loss:.4f}")
-        return
-
-    base_path = Path("mlp_lm_base.py")
-    if not base_path.exists():
-        print("[baseline] mlp_lm_base.py not found, skipping baseline run")
-        return
-
-    print(f"\n{'='*50}")
-    print("[baseline] Running baseline (round 0)...", flush=True)
-    try:
-        loss, acc = run(base_path.read_text())
-        log.insert(0, {"round": 0, "idea": "baseline", "loss": loss, "acc": acc, "improved": False})
-        save_log(log)
-        print(f"[baseline] Baseline: loss={loss:.4f} acc={acc:.1%} — all experiments must beat this")
-    except Exception as e:
-        print(f"[baseline] Baseline run failed: {e}")
-
 # --- Research loop ---
 def main():
-    log = load_log()                                              # Resume existing experiment history
+    log = load_log()                                              # Resume or seed with baseline
 
     mlp_path = Path("mlp_lm.py")
     print(f"[main] Reading base model from {mlp_path.resolve()}")
@@ -163,8 +146,6 @@ def main():
         raise FileNotFoundError(f"[main] {mlp_path} not found — are you in the AutoResearch directory?")
     best_code = mlp_path.read_text()                              # Start from current best code
     print(f"[main] Base model loaded ({len(best_code)} chars)")
-
-    run_baseline(log, best_code)                                  # Ensure round 0 baseline exists
 
     rounds_done = max((r["round"] for r in log), default=0)      # Highest round number attempted (success or fail)
     print(f"[main] Rounds already attempted: {rounds_done} | Remaining: {MAX_ROUNDS - rounds_done}")
@@ -182,8 +163,8 @@ def main():
             print(f"\nRound {round_num}: {idea}")
             loss, acc = run(candidate_code)                      # Run proposed experiment
 
-            old_losses = [r["loss"] for r in log if "loss" in r] # Earlier successful losses (incl. baseline)
-            improved = loss < min(old_losses, default=float("inf"))  # Must beat baseline too
+            old_losses = [r["loss"] for r in log if "loss" in r] # All losses including baseline
+            improved = loss < min(old_losses, default=float("inf"))  # Must beat baseline
 
             log.append({
                 "round": round_num,
