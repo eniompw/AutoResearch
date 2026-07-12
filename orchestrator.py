@@ -18,16 +18,6 @@ client = OpenAI(
     timeout=120,
 )
 
-def load_log():
-    log = json.loads(LOG_FILE.read_text())                       # results.json ships with baseline as round 0
-    successes = sum(1 for r in log if r.get("status") == "success")
-    failures  = sum(1 for r in log if r.get("status") == "failure")
-    print(f"[log] {len(log)} entries ({successes} succeeded, {failures} failed)")
-    return log
-
-def save_log(log):
-    LOG_FILE.write_text(json.dumps(log, indent=2))
-
 def plateau(log):
     losses = [r["loss"] for r in log if r.get("status") == "success"]
     return len(losses) > PATIENCE and min(losses[-PATIENCE:]) >= min(losses[:-PATIENCE])
@@ -69,7 +59,6 @@ Rules:
 - Change one idea only
 """
     t0 = time.time()
-    chunks, tokens = [], 0
     stream = client.chat.completions.create(
         model="z-ai/glm-5.2",
         messages=[{"role": "user", "content": prompt}],
@@ -77,15 +66,8 @@ Rules:
         max_tokens=8192,
         stream=True,                                             # Stream so we see progress, not a silent hang
     )
-    for chunk in stream:
-        delta = chunk.choices[0].delta.content or ""
-        chunks.append(delta)
-        tokens += 1
-        if tokens % 50 == 0:
-            print(f"[llm] ...{tokens} tokens ({time.time()-t0:.0f}s)", flush=True)
-
-    text = "".join(chunks)
-    print(f"[llm] Done: {tokens} tokens in {time.time()-t0:.1f}s", flush=True)
+    text = "".join(c.choices[0].delta.content or "" for c in stream)
+    print(f"[llm] Done in {time.time()-t0:.1f}s", flush=True)
 
     idea_match = re.search(r"IDEA:\s*(.+)", text)
     code_match = re.search(r"```python\s*(.*?)```", text, re.S)
@@ -99,14 +81,12 @@ def run(code):
         raise ValueError("TRAIN_SECONDS must remain 60.")        # Reject unfair time budget
 
     Path("current_experiment.py").write_text(code)
-    print(f"[run] Launching experiment...", flush=True)
+    print("[run] Launching experiment...", flush=True)
     result = subprocess.run(
         [sys.executable, "current_experiment.py"],
         capture_output=True, text=True, timeout=90,              # 60s training + startup margin
     )
     print(result.stdout)
-    if result.stderr:
-        print(f"[run] stderr: {result.stderr[-500:]}")
     if result.returncode:
         raise RuntimeError(result.stderr[-500:])
 
@@ -116,9 +96,10 @@ def run(code):
     return loss, epochs
 
 def main():
-    log = load_log()
-    best_code = Path("mlp_lm.py").read_text()                    # Current best model code
+    log = json.loads(LOG_FILE.read_text())
+    print(f"[log] {len(log)} entries ({sum(1 for r in log if r.get('status')=='success')} ok, {sum(1 for r in log if r.get('status')=='failure')} failed)")
 
+    best_code   = Path("mlp_lm.py").read_text()                  # Current best model code
     rounds_done = max(r["round"] for r in log)                   # Resume from last attempted round
     print(f"[main] Working directory: {Path.cwd()}")
     print(f"[main] Rounds done: {rounds_done} | Remaining: {MAX_ROUNDS - rounds_done}")
@@ -137,7 +118,7 @@ def main():
         except Exception as e:
             print(f"Round {round_num} LLM failed: {e}")
             log.append({"round": round_num, "status": "failure", "reason": f"llm: {e}"})
-            save_log(log)
+            LOG_FILE.write_text(json.dumps(log, indent=2))
             continue
 
         try:
@@ -145,19 +126,19 @@ def main():
         except Exception as e:
             print(f"Round {round_num} code crashed: {e}")
             log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"run: {e}"})
-            save_log(log)
+            LOG_FILE.write_text(json.dumps(log, indent=2))
             continue
 
         best_loss = min(r["loss"] for r in log if "loss" in r)   # Includes baseline
         if loss < best_loss:
             log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "epochs": epochs})
-            save_log(log)
+            LOG_FILE.write_text(json.dumps(log, indent=2))
             print(f"Loss: {loss:.4f} | Epochs: {epochs} | Accepted")
             best_code = candidate_code
             Path("mlp_lm.py").write_text(best_code)              # Persist new best
         else:
             log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | epochs: {epochs}"})
-            save_log(log)
+            LOG_FILE.write_text(json.dumps(log, indent=2))
             print(f"Loss: {loss:.4f} | Epochs: {epochs} | Rejected")
 
 if __name__ == "__main__":
