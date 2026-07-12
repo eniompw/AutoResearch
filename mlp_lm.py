@@ -6,16 +6,16 @@ torch.set_default_device('cuda' if torch.cuda.is_available() else 'cpu') # Put n
 
 # --- Hyperparameters ---
 NUM_STORIES   = 100      # Number of TinyStories to load
-CONTEXT_SIZE  = 32       # Previous characters used to predict the next one
-EMBED_SIZE    = 32       # Embedding dimensions per character
-HIDDEN_SIZE   = 64       # Neurons in the MLP hidden layer
-BATCH_SIZE    = 256      # Training pairs per gradient step
-LR            = 3e-3     # Adam learning rate
-ACT           = nn.ReLU  # Activation function: try nn.Tanh, nn.GELU, nn.SiLU
+CONTEXT_SIZE  = 4        # Previous characters used to predict the next one
+EMBED_SIZE    = 8        # Embedding dimensions per character
+HIDDEN_SIZE   = 16       # Neurons in the MLP hidden layer
+BATCH_SIZE    = 8        # Training pairs per gradient step
+LR            = 1e-1     # Adam learning rate
+ACT           = nn.Sigmoid  # Activation function: try nn.Tanh, nn.GELU, nn.SiLU
 TRAIN_SECONDS = 60       # Fixed budget so all experiments are comparable
 LOG_EVERY     = 1000     # Print training metrics every N steps
-GEN_CHARS     = 200      # Characters to generate after training
-TEMP          = 0.8      # Sampling temperature (lower = more focused)
+GEN_CHARS     = 128      # Characters to generate after training
+TEMP          = 1.0      # Sampling temperature (lower = more focused)
 
 # --- Data ---
 inputs, targets, idx_to_char, _, vocab_size = load_tinystories(NUM_STORIES, CONTEXT_SIZE) # Context-target pairs
