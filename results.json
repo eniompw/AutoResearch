@@ -3,14 +3,6 @@
     "round": 0,
     "status": "success",
     "idea": "baseline",
-    "loss": 0.747585,
-    "steps": 29224,
-    "sample": "d Sue. Tom learn maked turt, wherse'r mad. But ams net a mokey, \"We, al Lily wanter to the pawlins far toorsunntice.\"\nThe keve carmy. Ben s"
-  },
-  {
-    "round": 1,
-    "status": "success",
-    "idea": "bad_hyperparams_baseline",
     "loss": 2.664546,
     "steps": 29988,
     "sample": " tu wri ya b Th puulti ilihdslda. adn tadle ti. li n \"red lrend \"ohee fit sown vi wi dhe irimnto.\" \"a han n Then. gIr lreur leve"
