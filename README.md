@@ -82,8 +82,7 @@ Each experiment is saved to `results.json` with a `status` of `success` or `fail
 
 ```json
 [
-  {"round": 0, "status": "success", "idea": "baseline", "loss": 2.6551, "epochs": 0},
-  {"round": 1, "status": "success", "idea": "Switch to mini-batch SGD with batch size 256.", "loss": 2.5266, "epochs": 7840}
+  {"round": 0, "status": "success", "idea": "baseline", "loss": 2.6551, "epochs": 17701}
 ]
 ```
 
