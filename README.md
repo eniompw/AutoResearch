@@ -25,7 +25,7 @@ A small automated ML research loop.
 ## Run on Kaggle
 
 1. Create a Kaggle notebook.
-2. Enable a GPU accelerator in **Notebook options**.
+2. Enable a **T4 GPU** accelerator in **Notebook options** (see [GPU note](#gpu-compatibility) below).
 3. Enable **Internet** in **Notebook options**.
 4. Add `NVIDIA_API_KEY` in **Add-ons -> Secrets**.
 5. Run this cell:
@@ -39,6 +39,14 @@ A small automated ML research loop.
 ```
 
 Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2).
+
+## GPU Compatibility
+
+> **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
+> ```
+> torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+> ```
+> Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
 
 ## Settings
 
