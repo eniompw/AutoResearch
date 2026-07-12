@@ -32,6 +32,7 @@ A small automated ML research loop.
 
 ```python
 !git clone https://github.com/eniompw/AutoResearch.git
+#  !git pull --ff-only origin main
 %cd AutoResearch
 !pip install -q openai
 !python orchestrator.py
