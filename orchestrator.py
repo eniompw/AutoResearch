@@ -32,15 +32,15 @@ def ask_model(code, log):
     prompt = f"""Improve this small MLP language model with ONE small change.
 
 IMPORTANT: All experiments run with a fixed 60-second training budget (TRAIN_SECONDS = 60).
-The 'epochs' field shows how many epochs completed in that time.
-A low epoch count means the change made training much slower — avoid ideas that reduce epochs significantly.
+The 'steps' field shows how many gradient steps completed in that time.
+A low step count means the change made training much slower — avoid ideas that reduce steps significantly.
 
 Current best code (infer what already works from this):
 ```python
 {code}
 ```
 
-Last 5 successful improvements (use epochs to judge training speed):
+Last 5 successful improvements (use steps to judge training speed):
 {json.dumps(recent_successes, indent=2)}
 
 Last 5 failed/rejected attempts to AVOID repeating:
@@ -56,7 +56,7 @@ complete replacement code
 Rules:
 - Keep TRAIN_SECONDS = 60
 - Keep torch.manual_seed(42)
-- Keep the FINAL | Loss: ... | Epochs: ... output line
+- Keep the FINAL | Loss: ... | Steps: ... output line
 - Change one idea only
 """
     t0 = time.time()
@@ -92,8 +92,8 @@ def run(code):
         raise RuntimeError(result.stderr[-500:])
 
     final = [l for l in result.stdout.splitlines() if l.startswith("FINAL")][-1]
-    loss   = float(re.search(r"Loss: ([\d.]+)",  final).group(1))
-    epochs = int(re.search(r"Epochs: (\d+)",     final).group(1))
+    loss  = float(re.search(r"Loss: ([\d.]+)",  final).group(1))
+    steps = int(re.search(r"Steps: (\d+)",      final).group(1))
 
     # Extract up to SAMPLE_LEN chars of generated text (lines after FINAL marker)
     lines = result.stdout.splitlines()
@@ -101,7 +101,7 @@ def run(code):
     sample_lines = [l for l in lines[final_idx+1:] if l.strip()]
     sample = " ".join(sample_lines)[:SAMPLE_LEN] if sample_lines else ""
 
-    return loss, epochs, sample
+    return loss, steps, sample
 
 def main():
     log = json.loads(LOG_FILE.read_text())
@@ -130,7 +130,7 @@ def main():
             continue
 
         try:
-            loss, epochs, sample = run(candidate_code)
+            loss, steps, sample = run(candidate_code)
         except Exception as e:
             print(f"Round {round_num} code crashed: {e}")
             log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"run: {e}"})
@@ -139,15 +139,15 @@ def main():
 
         best_loss = min(r["loss"] for r in log if "loss" in r)   # Includes baseline
         if loss < best_loss:
-            log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "epochs": epochs, "sample": sample})
+            log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "steps": steps, "sample": sample})
             LOG_FILE.write_text(json.dumps(log, indent=2))
-            print(f"Loss: {loss:.4f} | Epochs: {epochs} | Accepted")
+            print(f"Loss: {loss:.4f} | Steps: {steps} | Accepted")
             best_code = candidate_code
             Path("mlp_lm.py").write_text(best_code)              # Persist new best
         else:
-            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | epochs: {epochs}", "sample": sample})
+            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | steps: {steps}", "sample": sample})
             LOG_FILE.write_text(json.dumps(log, indent=2))
-            print(f"Loss: {loss:.4f} | Epochs: {epochs} | Rejected")
+            print(f"Loss: {loss:.4f} | Steps: {steps} | Rejected")
 
 if __name__ == "__main__":
     main()

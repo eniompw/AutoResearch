@@ -9,7 +9,7 @@ A small automated ML research loop.
 1. GLM-5.2 reads `mlp_lm.py` and recent experiment results
 2. It suggests one small code change and explains the idea
 3. The candidate trains for 60 seconds on Kaggle GPU
-4. The idea, loss, epochs, and a 128-char generated text sample are saved to `results.json`
+4. The idea, loss, steps, and a 128-char generated text sample are saved to `results.json`
 5. Better candidates replace `mlp_lm.py`
 6. The loop stops after 4 experiments without a new best loss
 
@@ -67,7 +67,7 @@ Edit `mlp_lm.py`:
 
 ```python
 TRAIN_SECONDS = 60   # Training time for every experiment
-LOG_EVERY     = 1000 # Print metrics every N epochs
+LOG_EVERY     = 1000 # Print metrics every N steps
 ```
 
 Override `orchestrator.py` settings via environment variables:
@@ -90,13 +90,13 @@ Each experiment is saved to `results.json` with a `status` of `success` or `fail
     "status": "success",
     "idea": "baseline",
     "loss": 2.6551,
-    "epochs": 17701,
+    "steps": 17701,
     "sample": " the toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe toe t"
   }
 ]
 ```
 
-Lower training loss is better. A candidate is accepted only when its loss beats all previous experiments including the baseline. The `epochs` field shows how many training epochs completed in 60 seconds — a low value means the change made training significantly slower. The `sample` field holds the first 128 characters of generated text, giving a quick qualitative check of output coherence alongside the loss metric.
+Lower training loss is better. A candidate is accepted only when its loss beats all previous experiments including the baseline. The `steps` field shows how many gradient steps completed in 60 seconds — a low value means the change made training significantly slower. The `sample` field holds the first 128 characters of generated text, giving a quick qualitative check of output coherence alongside the loss metric.
 
 ## Debugging
 
