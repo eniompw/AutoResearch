@@ -106,13 +106,20 @@ git checkout main -- results.json
 Reset to baseline and start fresh:
 
 ```python
+# Move out of the folder before deleting it
+%cd /kaggle/working
+
 import shutil
-shutil.rmtree('/kaggle/working/AutoResearch')
+shutil.rmtree("AutoResearch", ignore_errors=True)
+
 !git clone https://github.com/eniompw/AutoResearch.git
-%cd AutoResearch
+%cd /kaggle/working/AutoResearch
+
 !pip install -q openai
 !python orchestrator.py
 ```
+
+Do not delete `/kaggle/working/AutoResearch` while the notebook is currently inside that directory. First run `%cd /kaggle/working`; otherwise the kernel's working directory no longer exists, and `git clone`, `pip`, and Python can fail with `getcwd` errors.
 
 ## Notes
 
