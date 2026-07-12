@@ -10,7 +10,7 @@ CONTEXT_SIZE  = 32        # Previous characters used to predict the next one
 HIDDEN_SIZE   = 64        # Neurons in the MLP hidden layer
 EPOCHS        = 100_000   # Safety cap; training normally stops at 60 seconds
 LR            = 0.01      # Step size for each weight update
-LOG_EVERY     = 100       # Print training metrics every N epochs
+LOG_EVERY     = 1000      # Print training metrics every N epochs
 GEN_CHARS     = 200       # Characters to generate after training
 TRAIN_SECONDS = 60        # Fixed budget so all experiments are comparable
 
@@ -41,7 +41,7 @@ for epoch in range(EPOCHS):
 
     if epoch % LOG_EVERY == 0:
         acc = (logits.argmax(1) == targets).float().mean()               # Fraction of correct next-character predictions
-        print(f"Epoch {epoch:4d} | Loss: {loss:.3f} | Acc: {acc:.1%}")   # Show learning progress
+        print(f"Epoch {epoch:5d} | Loss: {loss:.3f} | Acc: {acc:.1%}")  # Show learning progress
 
     if time.time() - start_time >= TRAIN_SECONDS:                        # Stop at the shared experiment budget
         break
