@@ -25,11 +25,17 @@ A small automated ML research loop.
 
 ## Run on Kaggle
 
-1. Create a Kaggle notebook.
-2. Enable a **T4 GPU** accelerator in **Notebook options** (see [GPU note](#gpu-compatibility) below).
-3. Enable **Internet** in **Notebook options**.
-4. Add `NVIDIA_API_KEY` in **Add-ons -> Secrets**.
-5. Run this cell:
+### 1. Get an NVIDIA API key
+
+Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to get a free API key.
+
+### 2. Create a Kaggle notebook
+
+1. Enable a **T4 GPU** accelerator in **Notebook options** (see [GPU note](#gpu-compatibility) below).
+2. Enable **Internet** in **Notebook options**.
+3. Add your key as `NVIDIA_API_KEY` in **Add-ons -> Secrets**.
+
+### 3. Run this cell
 
 ```python
 import os
@@ -44,8 +50,6 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 `results.json` and `mlp_lm.py` persist across Kaggle sessions. The stash/pull/pop pattern updates source files while preserving your local experiment results.
 
-Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2).
-
 ## GPU Compatibility
 
 > **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
@@ -53,26 +57,6 @@ Get an NVIDIA API key from [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-
 > torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
 > ```
 > Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
-
-## Debugging
-
-Check experiment history:
-
-```python
-import json
-print(json.load(open('/kaggle/working/AutoResearch/results.json')))
-```
-
-Reset to baseline and start fresh:
-
-```python
-import shutil
-shutil.rmtree('/kaggle/working/AutoResearch')
-!git clone https://github.com/eniompw/AutoResearch.git
-%cd AutoResearch
-!pip install -q openai
-!python orchestrator.py
-```
 
 ## Settings
 
@@ -105,6 +89,26 @@ Each successful experiment is saved to `results.json`. Round 0 is the pre-seeded
 ```
 
 Lower training loss is better. A candidate is accepted only when its loss beats all previous experiments including the baseline.
+
+## Debugging
+
+Check experiment history:
+
+```python
+import json
+print(json.load(open('/kaggle/working/AutoResearch/results.json')))
+```
+
+Reset to baseline and start fresh:
+
+```python
+import shutil
+shutil.rmtree('/kaggle/working/AutoResearch')
+!git clone https://github.com/eniompw/AutoResearch.git
+%cd AutoResearch
+!pip install -q openai
+!python orchestrator.py
+```
 
 ## Notes
 
