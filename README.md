@@ -89,9 +89,9 @@ Each experiment is saved to `results.json` with a `status` of `success` or `fail
     "round": 0,
     "status": "success",
     "idea": "baseline",
-    "loss": 2.664546,
-    "steps": 29988,
-    "sample": " tu wri ya b Th puulti ilihdslda. adn tadle ti. li n ..."
+    "loss": 2.271498,
+    "steps": 31016,
+    "sample": " ald there poimyo.\" \"Wayor way and plirth ild fver a tomard. an the mat Rhe hant tamlerit. \"Day anel hponme and no xonds. They t"
   }
 ]
 ```
