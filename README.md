@@ -100,11 +100,15 @@ Lower training loss is better. A candidate is accepted only when its loss beats 
 
 ## Debugging
 
-Check experiment history:
+Check experiment history as a table:
 
 ```python
 import json
-print(json.load(open('/kaggle/working/AutoResearch/results.json')))
+import pandas as pd
+
+data = json.load(open('/kaggle/working/AutoResearch/results.json'))
+df = pd.DataFrame(data)
+df
 ```
 
 If `results.json` has a git merge conflict, restore the clean version:
