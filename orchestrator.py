@@ -47,8 +47,6 @@ complete replacement code
 ```
 
 Rules:
-- Keep NUM_STORIES = 100
-- Keep CONTEXT_SIZE = 32
 - Keep TRAIN_SECONDS = 60
 - Keep torch.manual_seed(42)
 - Keep the FINAL | Loss: ... | Acc: ... output line
@@ -67,7 +65,11 @@ Rules:
     return idea, code
 
 def run(code):
-    Path("current_experiment.py").write_text(code)                # Save proposed experiment
+    train_seconds = int(re.search(r"TRAIN_SECONDS\s*=\s*(\d+)", code).group(1))  # Read candidate time limit
+    if train_seconds != 60:
+        raise ValueError("TRAIN_SECONDS must remain 60.")        # Reject unfair time budget
+
+    Path("current_experiment.py").write_text(code)               # Save proposed experiment
     result = subprocess.run(
         [sys.executable, "current_experiment.py"],                # Run in current Kaggle session
         capture_output=True,
@@ -97,7 +99,7 @@ def main():
         try:
             idea, candidate_code = ask_model(best_code, log)     # Ask GLM for hypothesis + code
             print(f"\nRound {round_num}: {idea}")                # Show tested idea
-            loss, acc = run(candidate_code)                      # Test it on Kaggle GPU
+            loss, acc = run(candidate_code)                      # Run proposed experiment
 
             old_losses = [run["loss"] for run in log if "loss" in run]  # Earlier successful losses
             improved = loss < min(old_losses, default=float("inf"))  # Compare with best result
@@ -115,7 +117,7 @@ def main():
 
             if improved:
                 best_code = candidate_code                       # Use winner as next baseline
-                Path("mlp_lm.py").write_text(best_code)          # Save new best model code
+                Path("mlp_lm.py").write_text(best_code)          # Save latest best code
                 print("Accepted.")
             else:
                 print("Rejected.")
