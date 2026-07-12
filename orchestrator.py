@@ -8,7 +8,7 @@ try:
 except ImportError:
     API_KEY = os.environ["NVIDIA_API_KEY"]                       # Read local environment variable
 
-MAX_ROUNDS = 20                                                  # Maximum experiments per run
+MAX_ROUNDS = int(os.environ.get("MAX_ROUNDS", 20))               # Set MAX_ROUNDS env var to override (e.g. 1 for debug)
 PATIENCE = 4                                                     # Stop after this many failed experiments
 LOG_FILE = Path("results.json")                                  # Saved experiment history
 
