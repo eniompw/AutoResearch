@@ -43,8 +43,8 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 %cd /kaggle/working
 !git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
-#!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
 %cd /kaggle/working/AutoResearch
+#!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
 !pip install -q openai  # First run only — comment out after
 !python orchestrator.py
 ```
