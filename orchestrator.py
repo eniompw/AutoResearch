@@ -1,6 +1,7 @@
 import json, os, re, subprocess, sys, time
 from pathlib import Path
 from openai import OpenAI, APIStatusError, APITimeoutError
+import httpx
 
 try:
     from kaggle_secrets import UserSecretsClient
@@ -16,7 +17,7 @@ SAMPLE_LEN = 128                                                 # Chars of gene
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",              # NVIDIA API endpoint
     api_key=API_KEY,
-    timeout=120,
+    timeout=httpx.Timeout(connect=30, read=120, write=30, pool=30),  # read timeout caps stream duration
 )
 
 def plateau(log):
@@ -65,7 +66,7 @@ Rules:
             model="z-ai/glm-5.2",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,
-            max_tokens=8192,
+            max_tokens=2048,                                     # reduced from 8192; MLP code doesn't need 8k tokens
             stream=True,                                         # Stream so we see progress, not a silent hang
         )
         chunks = []
