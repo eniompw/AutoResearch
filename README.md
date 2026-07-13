@@ -2,13 +2,13 @@
 
 A small automated ML research loop.
 
-[GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2) suggests one improvement to a TinyStories MLP, Kaggle tests it for 60 seconds, and the loop keeps the change only when training loss improves.
+[GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2) suggests one improvement to a TinyStories MLP, [Kaggle](https://www.kaggle.com) tests it for 60 seconds, and the loop keeps the change only when training loss improves.
 
 ## Background
 
 After 65+ manual experiments across five models (MLP → BPE transformer) documented in [TinyLM/BENCHMARKS.md](https://github.com/eniompw/TinyLM/blob/main/BENCHMARKS.md), a clear pattern emerged: every round is just *read model → propose one change → train → keep if loss improves*. That's a loop an LLM can run.
 
-Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), but built entirely on free resources — the [NVIDIA GLM-5.2 API](https://build.nvidia.com/z-ai/glm-5.2) for suggestions and a Kaggle T4 for GPU training.
+Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), but built entirely on free resources — the [NVIDIA GLM-5.2 API](https://build.nvidia.com/z-ai/glm-5.2) for suggestions and a [Kaggle](https://www.kaggle.com) T4 for GPU training.
 
 The **MLP** is the deliberate starting point: no attention, minimal code, easy to follow for anyone without a transformer background — yet it still surfaces the core research challenges (memorization, capacity limits, speed/accuracy trade-offs).
 
