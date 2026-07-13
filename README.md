@@ -20,7 +20,8 @@ A small automated ML research loop.
 | `mlp_lm.py` | Current best model (updated each accepted round) |
 | `mlp_lm_base.py` | Original unmodified baseline model |
 | `tinystories_dataset.py` | Loads TinyStories and creates context-target pairs |
-| `orchestrator.py` | Calls GLM-5.2, runs experiments, and saves results |
+| `api.py` | NVIDIA API client setup and `ask_model()` — all LLM interaction |
+| `orchestrator.py` | Main research loop — runs experiments and saves results |
 | `results.json` | Experiment history — pre-seeded with round 0 baseline |
 
 ## Run on Kaggle
