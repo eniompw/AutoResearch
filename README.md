@@ -1,8 +1,8 @@
 # 🤖 AutoResearch
 
-A small automated ML research loop.
+A small automated ML research loop — free LLM API, free GPU.
 
-[GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2) suggests one improvement to a TinyStories MLP, [Kaggle](https://www.kaggle.com) tests it for 60 seconds, and the loop keeps the change only when training loss improves.
+An LLM ([GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2)) proposes one code change to a TinyStories MLP, [Kaggle](https://www.kaggle.com) trains it for 60 seconds on a free T4 GPU, and the loop keeps the change only when training loss improves. Repeat.
 
 ## 📚 Background
 
