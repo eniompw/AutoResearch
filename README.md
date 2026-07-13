@@ -1,10 +1,10 @@
-# AutoResearch
+# 🤖 AutoResearch
 
 A small automated ML research loop.
 
 [GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2) suggests one improvement to a TinyStories MLP, [Kaggle](https://www.kaggle.com) tests it for 60 seconds, and the loop keeps the change only when training loss improves.
 
-## Background
+## 📚 Background
 
 After 65+ manual experiments across five models (MLP → BPE transformer) documented in [TinyLM/BENCHMARKS.md](https://github.com/eniompw/TinyLM/blob/main/BENCHMARKS.md), a clear pattern emerged: every round is just *read model → propose one change → train → keep if loss improves*. That's a loop an LLM can run.
 
@@ -12,27 +12,27 @@ Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch),
 
 The **MLP** is the deliberate starting point: no attention, minimal code, easy to follow for anyone without a transformer background — yet it still surfaces the core research challenges (memorization, capacity limits, speed/accuracy trade-offs).
 
-## How it works
+## ⚙️ How it works
 
-1. GLM-5.2 reads `mlp_lm.py` and recent experiment results
-2. It suggests one small code change and explains the idea
-3. The candidate trains for 60 seconds on Kaggle GPU
-4. The idea, loss, steps, and a 128-char generated text sample are saved to `results.json`
-5. Better candidates replace `mlp_lm.py`
-6. The loop stops after 4 experiments without a new best loss
+1. 📖 GLM-5.2 reads `mlp_lm.py` and recent experiment results
+2. 💡 It suggests one small code change and explains the idea
+3. ⏱️ The candidate trains for 60 seconds on Kaggle GPU
+4. 💾 The idea, loss, steps, and a 128-char generated text sample are saved to `results.json`
+5. ✅ Better candidates replace `mlp_lm.py`
+6. 🛑 The loop stops after 4 experiments without a new best loss
 
-## Files
+## 📂 Files
 
 | File | Purpose |
 |---|---|
-| [`mlp_lm.py`](mlp_lm.py) | Current best model (updated each accepted round) |
-| [`mlp_lm_base.py`](mlp_lm_base.py) | Original unmodified baseline model |
-| [`tinystories_dataset.py`](tinystories_dataset.py) | Loads TinyStories and creates context-target pairs |
-| [`api.py`](api.py) | NVIDIA API client setup and `ask_model()` — all LLM interaction |
-| [`orchestrator.py`](orchestrator.py) | Main research loop — runs experiments and saves results |
-| [`results.json`](results.json) | Experiment history — pre-seeded with round 0 baseline |
+| [`mlp_lm.py`](mlp_lm.py) | 🏆 Current best model (updated each accepted round) |
+| [`mlp_lm_base.py`](mlp_lm_base.py) | 📌 Original unmodified baseline model |
+| [`tinystories_dataset.py`](tinystories_dataset.py) | 📚 Loads TinyStories and creates context-target pairs |
+| [`api.py`](api.py) | 🔌 NVIDIA API client setup and `ask_model()` — all LLM interaction |
+| [`orchestrator.py`](orchestrator.py) | 🎼 Main research loop — runs experiments and saves results |
+| [`results.json`](results.json) | 📊 Experiment history — pre-seeded with round 0 baseline |
 
-## Run on Kaggle
+## 🚀 Run on Kaggle
 
 ### 1. Get an NVIDIA API key
 
@@ -62,7 +62,7 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 Always `%cd /kaggle/working` before `git clone` so the kernel's working directory exists regardless of which cell was run last. Using absolute paths for `%cd` avoids `getcwd` errors if the notebook was previously inside `AutoResearch`.
 
-## GPU Compatibility
+## ⚠️ GPU Compatibility
 
 > **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
 > ```
@@ -70,7 +70,7 @@ Always `%cd /kaggle/working` before `git clone` so the kernel's working director
 > ```
 > Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
 
-## Settings
+## 🔧 Settings
 
 Edit `mlp_lm.py`:
 
@@ -88,7 +88,7 @@ os.environ["MAX_ROUNDS"] = "3"   # Default: 20
 
 Keep `TRAIN_SECONDS` fixed during one run. Otherwise, a candidate could appear better simply because it trained longer.
 
-## Results
+## 📊 Results
 
 Each experiment is saved to `results.json` with a `status` of `success` or `failure`. Round 0 is the pre-seeded baseline:
 
@@ -107,7 +107,7 @@ Each experiment is saved to `results.json` with a `status` of `success` or `fail
 
 Lower training loss is better. A candidate is accepted only when its loss beats all previous experiments including the baseline. The `steps` field shows how many gradient steps completed in 60 seconds — a low value means the change made training significantly slower. The `sample` field holds the first 128 characters of generated text, giving a quick qualitative check of output coherence alongside the loss metric.
 
-## Debugging
+## 🐛 Debugging
 
 Check experiment history as a table:
 
@@ -144,7 +144,7 @@ shutil.rmtree("AutoResearch", ignore_errors=True)
 
 Do not delete `/kaggle/working/AutoResearch` while the notebook is currently inside that directory. First run `%cd /kaggle/working`; otherwise the kernel's working directory no longer exists, and `git clone`, `pip`, and Python can fail with `getcwd` errors.
 
-## Notes
+## 📝 Notes
 
 - `results.json` and `mlp_lm.py` persist across Kaggle sessions — no need to push to git.
 - Experiments run sequentially inside one Kaggle notebook session.
