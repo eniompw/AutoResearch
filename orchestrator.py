@@ -1,6 +1,6 @@
 import json, os, re, subprocess, sys, time
 from pathlib import Path
-from openai import OpenAI
+from openai import OpenAI, APIStatusError, APITimeoutError
 
 try:
     from kaggle_secrets import UserSecretsClient
@@ -60,15 +60,29 @@ Rules:
 - Change one idea only
 """
     t0 = time.time()
-    stream = client.chat.completions.create(
-        model="z-ai/glm-5.2",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.5,
-        max_tokens=8192,
-        stream=True,                                             # Stream so we see progress, not a silent hang
-    )
-    text = "".join(c.choices[0].delta.content or "" for c in stream)
-    print(f"[llm] Done in {time.time()-t0:.1f}s", flush=True)
+    try:
+        stream = client.chat.completions.create(
+            model="z-ai/glm-5.2",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5,
+            max_tokens=8192,
+            stream=True,                                         # Stream so we see progress, not a silent hang
+        )
+        chunks = []
+        first_token = True
+        for c in stream:
+            token = c.choices[0].delta.content or ""
+            if token and first_token:
+                print(f"[llm] First token in {time.time()-t0:.1f}s", flush=True)
+                first_token = False
+            chunks.append(token)
+        text = "".join(chunks)
+        print(f"[llm] Done in {time.time()-t0:.1f}s ({len(text)} chars)", flush=True)
+
+    except APITimeoutError:
+        raise RuntimeError(f"[llm] Timeout after {time.time()-t0:.1f}s")
+    except APIStatusError as e:
+        raise RuntimeError(f"[llm] HTTP {e.status_code}: {e.message}")
 
     idea_match = re.search(r"IDEA:\s*(.+)", text)
     code_match = re.search(r"```python\s*(.*?)```", text, re.S)
