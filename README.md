@@ -160,6 +160,12 @@ If `results.json` has a git merge conflict, restore the clean version:
 git checkout main -- results.json
 ```
 
+Discard local `results.json` and restore the remote version (e.g. to restart research from the repo's current state):
+
+```bash
+git fetch origin && git checkout origin/main -- results.json
+```
+
 Reset to baseline and start fresh:
 
 ```python
