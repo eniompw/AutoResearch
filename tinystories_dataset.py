@@ -7,7 +7,7 @@ def load_tinystories(num_stories=500, context_size=4):
     Fetches TinyStories and prepares it for a character-level language model.
     Returns: input_ids, target_ids, idx_to_char (dict), encoded (list), vocab_size (int)
     """
-    dataset = load_dataset('karpathy/tinystories-gpt4-clean', split='train', streaming=True)
+    dataset = load_dataset('karpathy/tinystories-gpt4-clean', split='train')  # cached locally after first download
     text = ''.join(s['text'] for s in itertools.islice(dataset, num_stories))
 
     vocab = sorted(set(text))                                        # ordered list of unique characters
