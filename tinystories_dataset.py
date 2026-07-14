@@ -1,20 +1,16 @@
-import torch, warnings, itertools, os
-from datasets import load_dataset
-warnings.filterwarnings('ignore')
+import torch, json
+
+LOCAL_FILE = "tinystories_5k.jsonl"
 
 def load_tinystories(num_stories=500, context_size=4):
     """
-    Fetches TinyStories and prepares it for a character-level language model.
+    Loads TinyStories from a local JSONL file and prepares it for a character-level language model.
     Returns: input_ids, target_ids, idx_to_char (dict), encoded (list), vocab_size (int)
     """
-    cache_dir = os.path.expanduser("~/.cache/huggingface/datasets")
-    cached = os.path.exists(os.path.join(cache_dir, "karpathy___tinystories-gpt4-clean"))
-    print(f"[data] {'Loading from cache' if cached else 'Downloading dataset (first run)'}...", flush=True)
-
-    dataset = load_dataset('karpathy/tinystories-gpt4-clean', split='train')  # cached locally after first download
-    print(f"[data] Ready \u2014 using {num_stories} stories", flush=True)
-
-    text = ''.join(s['text'] for s in itertools.islice(dataset, num_stories))
+    print(f"[data] Loading {num_stories} stories from {LOCAL_FILE}...", flush=True)
+    with open(LOCAL_FILE) as f:
+        text = ''.join(json.loads(line)["text"] for _, line in zip(range(num_stories), f))
+    print(f"[data] Ready — {len(text):,} characters", flush=True)
 
     vocab = sorted(set(text))                                        # ordered list of unique characters
     char_to_id = {c: i for i, c in enumerate(vocab)}                 # char → integer id
