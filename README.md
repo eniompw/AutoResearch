@@ -2,7 +2,7 @@
 
 A small automated ML research loop — free LLM API, free GPU.
 
-An LLM ([GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2)) proposes one code change to a TinyStories MLP, [Kaggle](https://www.kaggle.com) trains it for 60 seconds on a free T4 GPU, and the loop keeps the change only when training loss improves. Repeat.
+An LLM ([GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2)) proposes one code change to a TinyStories MLP, [Kaggle](https://www.kaggle.com) or [Google Colab](https://colab.research.google.com) trains it for 60 seconds on a free T4 GPU, and the loop keeps the change only when training loss improves. Repeat.
 
 ## 📚 Background
 
