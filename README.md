@@ -32,6 +32,8 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 | [`orchestrator.py`](orchestrator.py) | 🎼 Main research loop — runs experiments and saves results |
 | [`results.json`](results.json) | 📊 Experiment history — pre-seeded with round 0 baseline |
 
+> 📖 See [TINYSTORIES.md](TINYSTORIES.md) for details on how the dataset is downloaded and how `tinystories_dataset.py` works.
+
 ## 🚀 Run on Kaggle
 
 ### 1. Get an NVIDIA API key
