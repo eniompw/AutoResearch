@@ -24,7 +24,7 @@ def run(code):
     print("[run] Launching experiment...", flush=True)
     result = subprocess.run(
         [sys.executable, "current_experiment.py"],   # Run it in a subprocess using same Python
-        capture_output=True, text=True, timeout=90,  # 60s training + ~30s startup margin
+        capture_output=True, text=True, timeout=180,  # 60s training + ~120s for dataset download/cache on first run
     )
     print(result.stdout)
     if result.returncode:                            # Non-zero exit = crash
