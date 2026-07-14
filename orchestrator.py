@@ -86,8 +86,8 @@ def main():
             best_code = candidate_code
             Path("mlp_lm.py").write_text(best_code)  # Overwrite best model file on disk
         else:
-            # No improvement: reject but still log for context
-            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"no improvement | loss: {loss:.4f} | steps: {steps}", "sample": sample})
+            # No improvement: reject but store loss/steps as fields for proper logging
+            log.append({"round": round_num, "status": "failure", "idea": idea, "loss": loss, "steps": steps, "reason": f"no improvement | loss: {loss:.4f} | steps: {steps}", "sample": sample})
             LOG_FILE.write_text(json.dumps(log, indent=2))
             print(f"Loss: {loss:.4f} | Steps: {steps} | Rejected")
 
