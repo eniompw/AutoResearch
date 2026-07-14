@@ -62,6 +62,14 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 Always `%cd /kaggle/working` before `git clone` so the kernel's working directory exists regardless of which cell was run last. Using absolute paths for `%cd` avoids `getcwd` errors if the notebook was previously inside `AutoResearch`.
 
+## ⚠️ GPU Compatibility
+
+> **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
+> ```
+> torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+> ```
+> Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
+
 ## 🚀 Run on Google Colab
 
 ### 1. Get an NVIDIA API key
@@ -91,14 +99,6 @@ os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
 ```
 
 > **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost unless you save them manually (e.g. mount Google Drive or push to git).
-
-## ⚠️ GPU Compatibility
-
-> **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
-> ```
-> torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
-> ```
-> Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
 
 ## 🔧 Settings
 
