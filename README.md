@@ -62,6 +62,36 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 Always `%cd /kaggle/working` before `git clone` so the kernel's working directory exists regardless of which cell was run last. Using absolute paths for `%cd` avoids `getcwd` errors if the notebook was previously inside `AutoResearch`.
 
+## 🚀 Run on Google Colab
+
+### 1. Get an NVIDIA API key
+
+Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to get a free API key.
+
+### 2. Create a Colab notebook
+
+1. Enable a **T4 GPU** via **Runtime → Change runtime type → T4 GPU**.
+2. Add your key as `NVIDIA_API_KEY` in **Secrets** (🔑 icon in the left sidebar), and enable notebook access.
+
+### 3. Run this cell
+
+```python
+import os
+os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
+
+from google.colab import userdata
+os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
+
+%cd /content
+!git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
+%cd /content/AutoResearch
+#!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
+!pip install -q openai  # First run only — comment out after
+!python orchestrator.py
+```
+
+> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost unless you save them manually (e.g. mount Google Drive or push to git).
+
 ## ⚠️ GPU Compatibility
 
 > **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
