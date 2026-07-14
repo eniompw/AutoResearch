@@ -1,4 +1,4 @@
-import torch, warnings, itertools
+import torch, warnings, itertools, os
 from datasets import load_dataset
 warnings.filterwarnings('ignore')
 
@@ -7,7 +7,13 @@ def load_tinystories(num_stories=500, context_size=4):
     Fetches TinyStories and prepares it for a character-level language model.
     Returns: input_ids, target_ids, idx_to_char (dict), encoded (list), vocab_size (int)
     """
+    cache_dir = os.path.expanduser("~/.cache/huggingface/datasets")
+    cached = os.path.exists(os.path.join(cache_dir, "karpathy___tinystories-gpt4-clean"))
+    print(f"[data] {'Loading from cache' if cached else 'Downloading dataset (first run)'}...", flush=True)
+
     dataset = load_dataset('karpathy/tinystories-gpt4-clean', split='train')  # cached locally after first download
+    print(f"[data] Ready \u2014 using {num_stories} stories", flush=True)
+
     text = ''.join(s['text'] for s in itertools.islice(dataset, num_stories))
 
     vocab = sorted(set(text))                                        # ordered list of unique characters
