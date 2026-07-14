@@ -89,6 +89,7 @@ Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to 
 import os
 from google.colab import userdata
 os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
+os.environ["HF_DATASETS_CACHE"] = "/content/hf_cache"  # keep dataset within session, avoids re-download each round
 os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 %cd /content
@@ -99,7 +100,7 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 !python orchestrator.py
 ```
 
-> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost unless you save them manually (e.g. mount Google Drive or push to git).
+> **Note:** Colab sessions reset when the runtime disconnects — `results.json`, `mlp_lm.py`, and the dataset cache are lost. Re-running the cell will re-download the dataset on the first round of each new session.
 
 ## 🔧 Settings
 
