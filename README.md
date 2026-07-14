@@ -154,13 +154,7 @@ df = pd.DataFrame(data)
 df
 ```
 
-If `results.json` has a git merge conflict, restore the clean version:
-
-```bash
-git checkout main -- results.json
-```
-
-Discard local `results.json` and restore the remote version (e.g. to restart research from the repo's current state):
+Discard local `results.json` and restore the remote version (e.g. to fix a merge conflict or restart research from the repo's current state):
 
 ```bash
 git fetch origin && git checkout origin/main -- results.json
