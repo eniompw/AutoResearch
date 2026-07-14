@@ -28,11 +28,12 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 | [`mlp_lm.py`](mlp_lm.py) | 🏆 Current best model (updated each accepted round) |
 | [`mlp_lm_base.py`](mlp_lm_base.py) | 📌 Original unmodified baseline model |
 | [`tinystories_dataset.py`](tinystories_dataset.py) | 📚 Loads TinyStories and creates context-target pairs |
+| [`tinystories_5k.jsonl`](tinystories_5k.jsonl) | 📄 First 5,000 TinyStories stories (included in repo) |
 | [`api.py`](api.py) | 🔌 NVIDIA API client setup and `ask_model()` — all LLM interaction |
 | [`orchestrator.py`](orchestrator.py) | 🎼 Main research loop — runs experiments and saves results |
 | [`results.json`](results.json) | 📊 Experiment history — pre-seeded with round 0 baseline |
 
-> 📖 See [TINYSTORIES.md](TINYSTORIES.md) for details on how the dataset is downloaded and how `tinystories_dataset.py` works.
+> 📖 See [TINYSTORIES.md](TINYSTORIES.md) for details on the dataset and how to download more than 5,000 stories.
 
 ## 🚀 Run on Kaggle
 
@@ -101,7 +102,7 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 !python orchestrator.py
 ```
 
-> **Note:** Colab sessions reset when the runtime disconnects — `results.json`, `mlp_lm.py`, and `tinystories_5k.jsonl` are lost. Re-run the dataset download cell from [TINYSTORIES.md](TINYSTORIES.md) to restore the data file.
+> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost. `tinystories_5k.jsonl` is restored automatically via `git clone` / `git pull`.
 
 ## 🔧 Settings
 
