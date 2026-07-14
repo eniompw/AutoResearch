@@ -2,15 +2,9 @@ import json, os, re, time
 from openai import OpenAI, APIStatusError, APITimeoutError
 import httpx
 
-try:
-    from kaggle_secrets import UserSecretsClient
-    API_KEY = UserSecretsClient().get_secret("NVIDIA_API_KEY")  # Read Kaggle secret
-except ImportError:
-    API_KEY = os.environ["NVIDIA_API_KEY"]                       # Read local environment variable
-
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",              # NVIDIA API endpoint
-    api_key=API_KEY,
+    api_key=os.environ["NVIDIA_API_KEY"],
     timeout=httpx.Timeout(connect=30, read=120, write=30, pool=30),  # read timeout caps stream duration
 )
 

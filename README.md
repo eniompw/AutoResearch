@@ -48,6 +48,8 @@ Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to 
 
 ```python
 import os
+from kaggle_secrets import UserSecretsClient
+os.environ["NVIDIA_API_KEY"] = UserSecretsClient().get_secret("NVIDIA_API_KEY")
 os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 %cd /kaggle/working
@@ -85,10 +87,9 @@ Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to 
 
 ```python
 import os
-os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
-
 from google.colab import userdata
 os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
+os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 
 %cd /content
 !git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
