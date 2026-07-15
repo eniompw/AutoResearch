@@ -35,6 +35,24 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 
 > 📖 See [TINYSTORIES.md](TINYSTORIES.md) for details on the dataset and how to download more than 5,000 stories.
 
+## ⚡ Platform choice
+
+| | Colab | Kaggle |
+|---|---|---|
+| Best for | ✅ Quick start and sharing | ✅ Longer, repeatable runs |
+| Free GPU | ✅ No phone verification | ❌ Phone verification required |
+| GPU availability | ❌ Varies with demand and usage | ✅ More predictable quota |
+| Files after reset | ❌ Lost unless saved elsewhere | ✅ Persist across sessions |
+| Background runs | ❌ | ✅ |
+| Multiple GPU notebooks | ✅ Possible | ❌ One at a time |
+| Internet | ✅ Usually ready | ❌ Must enable it |
+| Datasets & versions | ❌ Manual / Drive-based | ✅ Built-in datasets and notebook versions |
+| AutoResearch fit | ✅ Easiest first run | ✅ Best for multi-round loops |
+
+> **Free-tier limits:** GPU model, availability, quota, session duration, and
+> installed environments can change without notice. Keep API keys in platform
+> Secrets, not notebook cells.
+
 ## 🚀 Run on Google Colab
 
 ### 1. Get an NVIDIA API key
