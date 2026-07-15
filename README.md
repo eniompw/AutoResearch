@@ -8,7 +8,7 @@ An LLM ([GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2)) proposes one code chan
 
 After 65+ manual experiments across five models (MLP → BPE transformer) documented in [TinyLM/BENCHMARKS.md](https://github.com/eniompw/TinyLM/blob/main/BENCHMARKS.md), a clear pattern emerged: every round is just *read model → propose one change → train → keep if loss improves*. That's a loop an LLM can run.
 
-Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), but built entirely on free resources — the [NVIDIA GLM-5.2 API](https://build.nvidia.com/z-ai/glm-5.2) for suggestions and a [Kaggle](https://www.kaggle.com) T4 for GPU training.
+Inspired by [Karpathy's autoresearch](https://github.com/karpathy/autoresearch), but built entirely on free resources — the [NVIDIA GLM-5.2 API](https://build.nvidia.com/z-ai/glm-5.2) for suggestions and a free T4 GPU via [Google Colab](https://colab.research.google.com) or [Kaggle](https://www.kaggle.com) for training.
 
 The **MLP** is the deliberate starting point: no attention, minimal code, easy to follow for anyone without a transformer background — yet it still surfaces the core research challenges (memorization, capacity limits, speed/accuracy trade-offs).
 
@@ -16,7 +16,7 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 
 1. 📖 GLM-5.2 reads `mlp_lm.py` and recent experiment results
 2. 💡 It suggests one small code change and explains the idea
-3. ⏱️ The candidate trains for 60 seconds on Kaggle GPU
+3. ⏱️ The candidate trains for 60 seconds on a free GPU (Colab or Kaggle)
 4. 💾 The idea, loss, steps, and a 128-char generated text sample are saved to `results.json`
 5. ✅ Better candidates replace `mlp_lm.py`
 6. 🛑 The loop stops after 4 experiments without a new best loss
@@ -98,11 +98,11 @@ Always `%cd /kaggle/working` before `git clone` so the kernel's working director
 
 ## ⚠️ GPU Compatibility
 
-> **Do not use the P100.** Kaggle's default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
+> **Do not use the P100.** On Kaggle, the default PyTorch environment uses CUDA 12.8+, which dropped support for the P100's Pascal architecture (SM 6.0). This causes:
 > ```
 > torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
 > ```
-> Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
+> On Colab, avoid selecting P100 as well — use **T4** (or newer) on either platform. T4 is Turing architecture (SM 7.5) and is fully supported.
 
 ## 🔧 Settings
 
@@ -149,7 +149,10 @@ Check experiment history as a table:
 import json
 import pandas as pd
 
-data = json.load(open('/kaggle/working/AutoResearch/results.json'))
+# Adjust path for your platform:
+# Colab:  '/content/AutoResearch/results.json'
+# Kaggle: '/kaggle/working/AutoResearch/results.json'
+data = json.load(open('results.json'))  # run from inside AutoResearch/
 df = pd.DataFrame(data)
 df
 ```
@@ -163,7 +166,7 @@ git fetch origin && git checkout origin/main -- results.json
 Reset to baseline and start fresh:
 
 ```python
-# Move out of the folder before deleting it
+# Colab: replace /kaggle/working with /content below
 %cd /kaggle/working
 
 import shutil
@@ -176,11 +179,12 @@ shutil.rmtree("AutoResearch", ignore_errors=True)
 !python orchestrator.py
 ```
 
-Do not delete `/kaggle/working/AutoResearch` while the notebook is currently inside that directory. First run `%cd /kaggle/working`; otherwise the kernel's working directory no longer exists, and `git clone`, `pip`, and Python can fail with `getcwd` errors.
+Do not delete the `AutoResearch` folder while the notebook is currently inside that directory. First `%cd` out to the parent directory; otherwise the kernel's working directory no longer exists, and `git clone`, `pip`, and Python can fail with `getcwd` errors.
 
 ## 📝 Notes
 
-- `results.json` and `mlp_lm.py` persist across Kaggle sessions — no need to push to git.
-- Experiments run sequentially inside one Kaggle notebook session.
+- On **Kaggle**, `results.json` and `mlp_lm.py` persist across sessions — no need to push to git.
+- On **Colab**, sessions reset on disconnect — save results externally (e.g. Google Drive) if needed.
+- Experiments run sequentially inside one notebook session.
 - This is an educational project, not a rigorous benchmark.
 - Inspect accepted code before relying on it.
