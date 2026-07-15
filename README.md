@@ -2,7 +2,7 @@
 
 A small automated ML research loop — free LLM API, free GPU.
 
-An LLM ([GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2)) proposes one code change to a TinyStories MLP, [Kaggle](https://www.kaggle.com) or [Google Colab](https://colab.research.google.com) trains it for 60 seconds on a free T4 GPU, and the loop keeps the change only when training loss improves. Repeat.
+An LLM ([GLM-5.2](https://build.nvidia.com/z-ai/glm-5.2)) proposes one code change to a TinyStories MLP, [Google Colab](https://colab.research.google.com) or [Kaggle](https://www.kaggle.com) trains it for 60 seconds on a free T4 GPU, and the loop keeps the change only when training loss improves. Repeat.
 
 ## 📚 Background
 
@@ -34,6 +34,35 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 | [`results.json`](results.json) | 📊 Experiment history — pre-seeded with round 0 baseline |
 
 > 📖 See [TINYSTORIES.md](TINYSTORIES.md) for details on the dataset and how to download more than 5,000 stories.
+
+## 🚀 Run on Google Colab
+
+### 1. Get an NVIDIA API key
+
+Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to get a free API key.
+
+### 2. Create a Colab notebook
+
+1. Enable a **T4 GPU** via **Runtime → Change runtime type → T4 GPU**.
+2. Add your key as `NVIDIA_API_KEY` in **Secrets** (🔑 icon in the left sidebar), and enable notebook access.
+
+### 3. Run this cell
+
+```python
+import os
+from google.colab import userdata
+os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
+os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
+
+%cd /content
+!git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
+%cd /content/AutoResearch
+#!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
+!pip install -q openai  # First run only — comment out after
+!python orchestrator.py
+```
+
+> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost. `tinystories_5k.jsonl` is restored automatically via `git clone` / `git pull`.
 
 ## 🚀 Run on Kaggle
 
@@ -74,35 +103,6 @@ Always `%cd /kaggle/working` before `git clone` so the kernel's working director
 > torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
 > ```
 > Use the **T4** (or newer) instead. T4 is Turing architecture (SM 7.5) and is fully supported.
-
-## 🚀 Run on Google Colab
-
-### 1. Get an NVIDIA API key
-
-Register at [GLM-5.2 on NVIDIA Build](https://build.nvidia.com/z-ai/glm-5.2) to get a free API key.
-
-### 2. Create a Colab notebook
-
-1. Enable a **T4 GPU** via **Runtime → Change runtime type → T4 GPU**.
-2. Add your key as `NVIDIA_API_KEY` in **Secrets** (🔑 icon in the left sidebar), and enable notebook access.
-
-### 3. Run this cell
-
-```python
-import os
-from google.colab import userdata
-os.environ["NVIDIA_API_KEY"] = userdata.get("NVIDIA_API_KEY")
-os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
-
-%cd /content
-!git clone https://github.com/eniompw/AutoResearch.git  # First run only — comment out after
-%cd /content/AutoResearch
-#!git stash && git pull --ff-only origin main && git stash pop  # Uncomment for subsequent runs
-!pip install -q openai  # First run only — comment out after
-!python orchestrator.py
-```
-
-> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost. `tinystories_5k.jsonl` is restored automatically via `git clone` / `git pull`.
 
 ## 🔧 Settings
 
