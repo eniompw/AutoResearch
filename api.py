@@ -14,7 +14,8 @@ def ask_model(code, log):
     recent_successes = [r for r in log if r.get("status") == "success"][-5:]  # last 5 wins for context
     recent_failures  = [r for r in log if r.get("status") == "failure"][-5:]  # last 5 losses to avoid repeating
 
-    prompt = f"""Improve this small MLP language model with ONE small change.
+    prompt = f"""Improve this PyTorch language model training script with ONE change.
+The change can be to any aspect of the code: model, training loop, or data.
 
 IMPORTANT: All experiments run with a fixed 60-second training budget (TRAIN_SECONDS = 60).
 The 'steps' field shows how many gradient steps completed in that time.
