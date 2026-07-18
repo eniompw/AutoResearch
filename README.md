@@ -14,18 +14,18 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 
 ## ⚙️ How it works
 
-1. 📖 GLM-5.2 reads `mlp_lm.py` and recent experiment results
+1. 📖 GLM-5.2 reads `train.py` and recent experiment results
 2. 💡 It suggests one small code change and explains the idea
 3. ⏱️ The candidate trains for 60 seconds on a free GPU (Colab or Kaggle)
 4. 💾 The idea, loss, steps, and a 128-char generated text sample are saved to `results.json`
-5. ✅ Better candidates replace `mlp_lm.py`
+5. ✅ Better candidates replace `train.py`
 6. 🛑 The loop stops after 4 experiments without a new best loss
 
 ## 📂 Files
 
 | File | Purpose |
 |---|---|
-| [`mlp_lm.py`](mlp_lm.py) | 🏆 Current best model (updated each accepted round) |
+| [`train.py`](train.py) | 🏆 Current best model (updated each accepted round) |
 | [`mlp_lm_base.py`](mlp_lm_base.py) | 📌 Original unmodified baseline model |
 | [`tinystories_dataset.py`](tinystories_dataset.py) | 📚 Loads TinyStories and creates context-target pairs |
 | [`tinystories_5k.jsonl`](tinystories_5k.jsonl) | 📄 First 5,000 TinyStories stories (included in repo) |
@@ -80,7 +80,7 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 !python orchestrator.py
 ```
 
-> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `mlp_lm.py` are lost. `tinystories_5k.jsonl` is restored automatically via `git clone` / `git pull`.
+> **Note:** Colab sessions reset when the runtime disconnects — `results.json` and `train.py` are lost. `tinystories_5k.jsonl` is restored automatically via `git clone` / `git pull`.
 
 ## 🚀 Run on Kaggle
 
@@ -110,7 +110,7 @@ os.environ["MAX_ROUNDS"] = "1"   # Increase for longer runs
 !python orchestrator.py
 ```
 
-`results.json` and `mlp_lm.py` persist across Kaggle sessions. The stash/pull/pop pattern updates source files while preserving your local experiment results.
+`results.json` and `train.py` persist across Kaggle sessions. The stash/pull/pop pattern updates source files while preserving your local experiment results.
 
 Always `%cd /kaggle/working` before `git clone` so the kernel's working directory exists regardless of which cell was run last. Using absolute paths for `%cd` avoids `getcwd` errors if the notebook was previously inside `AutoResearch`.
 
@@ -124,7 +124,7 @@ Always `%cd /kaggle/working` before `git clone` so the kernel's working director
 
 ## 🔧 Settings
 
-Edit `mlp_lm.py`:
+Edit `train.py`:
 
 ```python
 TRAIN_SECONDS = 60   # Training time for every experiment
@@ -201,7 +201,7 @@ Do not delete the `AutoResearch` folder while the notebook is currently inside t
 
 ## 📝 Notes
 
-- On **Kaggle**, `results.json` and `mlp_lm.py` persist across sessions — no need to push to git.
+- On **Kaggle**, `results.json` and `train.py` persist across sessions — no need to push to git.
 - On **Colab**, sessions reset on disconnect — save results externally (e.g. Google Drive) if needed.
 - Experiments run sequentially inside one notebook session.
 - This is an educational project, not a rigorous benchmark.
