@@ -8,7 +8,7 @@ torch.set_default_device('cuda' if torch.cuda.is_available() else 'cpu') # Put n
 NUM_STORIES   = 100      # Number of TinyStories to load
 CONTEXT_SIZE  = 4        # Previous characters used to predict the next one
 EMBED_SIZE    = 8        # Embedding dimensions per character
-HIDDEN_SIZE   = 16       # Neurons in the MLP hidden layer
+HIDDEN_SIZE   = 16       # Neurons in the hidden layer
 BATCH_SIZE    = 8        # Training pairs per gradient step
 LR            = 1e-3     # Adam learning rate
 ACT           = nn.ReLU  # Activation function
@@ -58,4 +58,4 @@ with torch.no_grad():                                                    # Infer
         context.append(torch.multinomial(probs, 1).item())              # Sample next character
 
 sample = ''.join(idx_to_char[i] for i in context[CONTEXT_SIZE:])       # Decode generated IDs back to text
-print(f"SAMPLE | {sample.replace(chr(10), ' ')}")                       # Parsed by orchestrator like FINAL
+print(sample.replace(chr(10), ' '))                                      # Plain text; collected by orchestrator after FINAL
