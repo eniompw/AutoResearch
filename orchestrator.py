@@ -8,29 +8,37 @@ LOG_FILE = Path("results.json")                      # Persistent experiment log
 SAMPLE_LEN = 128                                     # Max chars of generated text to store per round
 
 
+def save(log, entry):
+    # Append entry to in-memory log and flush to disk atomically
+    log.append(entry)
+    LOG_FILE.write_text(json.dumps(log, indent=2))
+
+
 def plateau(log):
-    # Extract losses only from successful rounds
-    losses = [r["loss"] for r in log if r.get("status") == "success"]
-    # True if we have enough data AND recent rounds haven't beaten the historical best
-    return len(losses) > PATIENCE and min(losses[-PATIENCE:]) >= min(losses[:-PATIENCE])
+    # Find the best (lowest-loss) successful round
+    ok = [r for r in log if r.get("status") == "success"]
+    best = min(ok, key=lambda r: r["loss"])
+    # Stop if we haven't seen a new best in the last PATIENCE rounds
+    return log[-1]["round"] - best["round"] >= PATIENCE
 
 
 def run(code):
-    # Guard: reject any code that tampers with the 60s training budget
-    if int(re.search(r"TRAIN_SECONDS\s*=\s*(\d+)", code).group(1)) != 60:
-        raise ValueError("TRAIN_SECONDS must remain 60.")
+    # Guard: reject any code that tampers with or omits the 60s training budget
+    m = re.search(r"TRAIN_SECONDS\s*=\s*(\d+)", code)
+    if not m or int(m.group(1)) != 60:
+        raise ValueError("TRAIN_SECONDS must be present and equal to 60.")
 
     Path("current_experiment.py").write_text(code)   # Write candidate code to disk
     print("[run] Launching experiment...", flush=True)
     result = subprocess.run(
         [sys.executable, "current_experiment.py"],   # Run it in a subprocess using same Python
-        capture_output=True, text=True, timeout=180,  # 60s training + ~120s for dataset download/cache on first run
+        capture_output=True, text=True, timeout=120, # 60s training + buffer; dataset is local
     )
     print(result.stdout)
     if result.returncode:                            # Non-zero exit = crash
         raise RuntimeError(result.stderr[-500:])     # Surface last 500 chars of stderr
 
-    # Parse the last FINAL line from stdout (format: "FINAL Loss: X Steps: Y")
+    # Parse the last FINAL line from stdout (format: "FINAL | Loss: X | Steps: Y")
     final = [l for l in result.stdout.splitlines() if l.startswith("FINAL")][-1]
     loss  = float(re.search(r"Loss: ([\d.]+)",  final).group(1))
     steps = int(re.search(r"Steps: (\d+)",      final).group(1))
@@ -60,35 +68,26 @@ def main():
             print("[main] Plateau reached.")
             break
 
+        idea = None                                  # Ensure idea is defined if ask_model raises
         try:
             idea, candidate_code = ask_model(best_code, log)  # Ask LLM for next improvement
             print(f"Idea: {idea}")
+            loss, steps, sample = run(candidate_code)          # Execute the proposed code
         except Exception as e:
-            # LLM call failed; log and skip to next round
-            log.append({"round": round_num, "status": "failure", "reason": f"llm: {e}"})
-            LOG_FILE.write_text(json.dumps(log, indent=2))
-            continue
-
-        try:
-            loss, steps, sample = run(candidate_code)  # Execute the proposed code
-        except Exception as e:
-            # Code crashed; log idea + error and skip
-            log.append({"round": round_num, "status": "failure", "idea": idea, "reason": f"run: {e}"})
-            LOG_FILE.write_text(json.dumps(log, indent=2))
+            # LLM call or experiment crashed; log whatever we know and try next round
+            save(log, {"round": round_num, "status": "failure", "idea": idea, "reason": str(e)})
             continue
 
         best_loss = min(r["loss"] for r in log if "loss" in r)  # Best loss including baseline
         if loss < best_loss:
-            # Improvement found: accept, persist new best code
-            log.append({"round": round_num, "status": "success", "idea": idea, "loss": loss, "steps": steps, "sample": sample})
-            LOG_FILE.write_text(json.dumps(log, indent=2))
+            # Improvement found: accept and persist new best code
+            save(log, {"round": round_num, "status": "success", "idea": idea, "loss": loss, "steps": steps, "sample": sample})
             print(f"Loss: {loss:.4f} | Steps: {steps} | Accepted")
             best_code = candidate_code
             Path("mlp_lm.py").write_text(best_code)  # Overwrite best model file on disk
         else:
-            # No improvement: reject but store loss/steps as fields for proper logging
-            log.append({"round": round_num, "status": "failure", "idea": idea, "loss": loss, "steps": steps, "reason": f"no improvement | loss: {loss:.4f} | steps: {steps}", "sample": sample})
-            LOG_FILE.write_text(json.dumps(log, indent=2))
+            # No improvement: reject but log loss/steps for analysis
+            save(log, {"round": round_num, "status": "failure", "idea": idea, "loss": loss, "steps": steps, "reason": f"no improvement | loss: {loss:.4f} | steps: {steps}", "sample": sample})
             print(f"Loss: {loss:.4f} | Steps: {steps} | Rejected")
 
 
