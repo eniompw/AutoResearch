@@ -19,7 +19,8 @@ TEMP          = 1.0      # Sampling temperature (lower = more focused)
 
 # --- Data ---
 inputs, targets, idx_to_char, _, vocab_size = load_tinystories(NUM_STORIES, CONTEXT_SIZE) # Context-target pairs
-inputs = inputs.long()                                                    # Embedding expects integer indices
+# inputs is already int64 (torch.tensor of Python ints); .long() is a no-op but kept as defensive habit
+inputs = inputs.long()
 
 # --- Model ---
 torch.manual_seed(42)                                                     # Same initialisation each experiment
@@ -36,7 +37,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LR)                  # Adam 
 start_time = time.time()
 n, step = inputs.size(0), 0
 
-for step in range(1_000_000):
+while time.time() - start_time < TRAIN_SECONDS:
+    step += 1
     idx  = torch.randint(0, n, (BATCH_SIZE,))                            # Random mini-batch indices
     loss = nn.functional.cross_entropy(model(inputs[idx]), targets[idx]) # Predict next character
     optimizer.zero_grad(); loss.backward(); optimizer.step()             # Standard gradient-descent step
@@ -44,17 +46,16 @@ for step in range(1_000_000):
     if step % LOG_EVERY == 0:
         print(f"Step  {step:6d} | Loss: {loss:.3f}")                     # Show learning progress
 
-    if time.time() - start_time >= TRAIN_SECONDS:                        # Stop at shared experiment budget
-        break
-
 # --- Final metrics (parsed by orchestrator) ---
-print(f"FINAL | Loss: {loss:.6f} | Steps: {step+1}")
+print(f"FINAL | Loss: {loss:.6f} | Steps: {step}")
 
 # --- Generate ---
 context = inputs[0].tolist()                                             # First training context as generation seed
-for _ in range(GEN_CHARS):
-    inp   = torch.tensor(context[-CONTEXT_SIZE:]).unsqueeze(0)          # Shape: (1, CONTEXT_SIZE)
-    probs = torch.softmax(model(inp)[0] / TEMP, dim=-1)                 # Temperature-scaled probabilities
-    context.append(torch.multinomial(probs, 1).item())                  # Sample next character
+with torch.no_grad():                                                    # Inference: no gradients needed (faster)
+    for _ in range(GEN_CHARS):
+        inp   = torch.tensor(context[-CONTEXT_SIZE:]).unsqueeze(0)      # Shape: (1, CONTEXT_SIZE)
+        probs = torch.softmax(model(inp)[0] / TEMP, dim=-1)             # Temperature-scaled probabilities
+        context.append(torch.multinomial(probs, 1).item())              # Sample next character
 
-print(''.join(idx_to_char[i] for i in context[CONTEXT_SIZE:]))          # Decode generated IDs back to text
+sample = ''.join(idx_to_char[i] for i in context[CONTEXT_SIZE:])       # Decode generated IDs back to text
+print(f"SAMPLE | {sample.replace(chr(10), ' ')}")                       # Parsed by orchestrator like FINAL
