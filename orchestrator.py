@@ -57,7 +57,7 @@ def main():
     # Print summary: total entries, successes, failures
     print(f"[log] {len(log)} entries ({sum(1 for r in log if r.get('status')=='success')} ok, {sum(1 for r in log if r.get('status')=='failure')} failed)")
 
-    best_code   = Path("mlp_lm.py").read_text()      # Load current best model code
+    best_code   = Path("train.py").read_text()        # Load current best model code
     rounds_done = max(r["round"] for r in log)       # Resume safely from last attempted round
 
     for round_num in range(rounds_done + 1, MAX_ROUNDS + 1):
@@ -84,7 +84,7 @@ def main():
             save(log, {"round": round_num, "status": "success", "idea": idea, "loss": loss, "steps": steps, "sample": sample})
             print(f"Loss: {loss:.4f} | Steps: {steps} | Accepted")
             best_code = candidate_code
-            Path("mlp_lm.py").write_text(best_code)  # Overwrite best model file on disk
+            Path("train.py").write_text(best_code)   # Overwrite best model file on disk
         else:
             # No improvement: reject but log loss/steps for analysis
             save(log, {"round": round_num, "status": "failure", "idea": idea, "loss": loss, "steps": steps, "reason": f"no improvement | loss: {loss:.4f} | steps: {steps}", "sample": sample})
