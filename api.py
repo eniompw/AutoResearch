@@ -2,10 +2,15 @@ import json, os, re, time
 from openai import OpenAI, APIStatusError, APITimeoutError
 import httpx
 
+MODEL = "z-ai/glm-5.2"  # swap model here
+
+if "NVIDIA_API_KEY" not in os.environ:
+    raise EnvironmentError("Missing NVIDIA_API_KEY — set it with: export NVIDIA_API_KEY=your_key")
+
 client = OpenAI(
     base_url="https://integrate.api.nvidia.com/v1",              # NVIDIA API endpoint
     api_key=os.environ["NVIDIA_API_KEY"],
-    timeout=httpx.Timeout(connect=30, read=120, write=30, pool=30),  # read timeout caps stream duration
+    timeout=httpx.Timeout(connect=30, read=120, write=30, pool=30),
 )
 
 def ask_model(code, log):
@@ -13,6 +18,9 @@ def ask_model(code, log):
 
     recent_successes = [r for r in log if r.get("status") == "success"][-5:]  # last 5 wins for context
     recent_failures  = [r for r in log if r.get("status") == "failure"][-5:]  # last 5 losses to avoid repeating
+
+    def slim(entries):
+        return [{"idea": e.get("idea"), "loss": e.get("loss"), "steps": e.get("steps"), "reason": e.get("reason")} for e in entries]
 
     prompt = f"""Improve this PyTorch language model training script with ONE change.
 The change can be to any aspect of the code: model, training loop, or data.
@@ -27,10 +35,10 @@ Current best code (infer what already works from this):
 ```
 
 Last 5 successful improvements (use steps to judge training speed):
-{json.dumps(recent_successes, indent=2)}
+{json.dumps(slim(recent_successes), indent=2)}
 
 Last 5 failed/rejected attempts to AVOID repeating:
-{json.dumps(recent_failures, indent=2)}
+{json.dumps(slim(recent_failures), indent=2)}
 
 Return exactly this format:
 
@@ -45,24 +53,15 @@ Rules:
 - Keep the FINAL | Loss: ... | Steps: ... output line
 - Change one idea only
 """
-    t0 = time.time()  # record start time to measure latency
+    t0 = time.time()
     try:
-        stream = client.chat.completions.create(
-            model="z-ai/glm-5.2",
+        resp = client.chat.completions.create(
+            model=MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,                                     # moderate creativity; lower = more deterministic
-            max_tokens=2048,                                     # reduced from 8192; MLP code doesn't need 8k tokens
-            stream=True,                                         # stream so we see progress, not a silent hang
+            max_tokens=2048,                                     # MLP code doesn't need more than 2k tokens
         )
-        chunks = []
-        first_token = True
-        for c in stream:
-            token = c.choices[0].delta.content or ""            # extract text delta, default "" if None
-            if token and first_token:
-                print(f"[llm] First token in {time.time()-t0:.1f}s", flush=True)  # time-to-first-token metric
-                first_token = False
-            chunks.append(token)
-        text = "".join(chunks)                                   # reassemble full response from stream
+        text = resp.choices[0].message.content
         print(f"[llm] Done in {time.time()-t0:.1f}s ({len(text)} chars)", flush=True)
 
     except APITimeoutError:
