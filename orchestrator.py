@@ -9,7 +9,7 @@ SAMPLE_LEN = 128                                     # Max chars of generated te
 
 
 def save(log, entry):
-    # Append entry to in-memory log and flush to disk atomically
+    # Append entry to in-memory log and save to disk
     log.append(entry)
     LOG_FILE.write_text(json.dumps(log, indent=2))
 
@@ -32,7 +32,7 @@ def run(code):
     print("[run] Launching experiment...", flush=True)
     result = subprocess.run(
         [sys.executable, "current_experiment.py"],   # Run it in a subprocess using same Python
-        capture_output=True, text=True, timeout=120, # 60s training + buffer; dataset is local
+        capture_output=True, text=True, timeout=180, # 60s training + headroom for compile/warmup
     )
     print(result.stdout)
     if result.returncode:                            # Non-zero exit = crash
