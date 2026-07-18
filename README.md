@@ -26,7 +26,6 @@ The **MLP** is the deliberate starting point: no attention, minimal code, easy t
 | File | Purpose |
 |---|---|
 | [`train.py`](train.py) | 🏆 Current best model (updated each accepted round) |
-| [`mlp_lm_base.py`](mlp_lm_base.py) | 📌 Original unmodified baseline model |
 | [`tinystories_dataset.py`](tinystories_dataset.py) | 📚 Loads TinyStories and creates context-target pairs |
 | [`tinystories_5k.jsonl`](tinystories_5k.jsonl) | 📄 First 5,000 TinyStories stories (included in repo) |
 | [`api.py`](api.py) | 🔌 NVIDIA API client setup and `ask_model()` — all LLM interaction |
