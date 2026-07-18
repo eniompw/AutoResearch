@@ -18,27 +18,35 @@ def ask_model(code, log):
 
     recent_successes = [r for r in log if r.get("status") == "success"][-5:]  # last 5 wins for context
     recent_failures  = [r for r in log if r.get("status") == "failure"][-5:]  # last 5 losses to avoid repeating
+    best = min((r for r in log if r.get("status") == "success"), key=lambda r: r["loss"])
 
     def slim(entries):
         return [{"idea": e.get("idea"), "loss": e.get("loss"), "steps": e.get("steps"), "reason": e.get("reason")} for e in entries]
 
-    prompt = f"""Improve this PyTorch language model training script with ONE change.
-The change can be to any aspect of the code: model, training loop, or data.
+    prompt = f"""You are improving a PyTorch language model training script.
+Goal: the lowest final training loss within a fixed 60-second budget (TRAIN_SECONDS = 60).
 
-IMPORTANT: All experiments run with a fixed 60-second training budget (TRAIN_SECONDS = 60).
-The 'steps' field shows how many gradient steps completed in that time.
-A low step count means the change made training much slower — avoid ideas that reduce steps significantly.
+Propose ONE change. It can be anything from tuning a constant to rethinking
+the model design itself — the current code is a starting point, not a constraint.
 
-Current best code (infer what already works from this):
+Current code:
 ```python
 {code}
 ```
 
-Last 5 successful improvements (use steps to judge training speed):
+Best loss so far: {best['loss']:.4f} — beat it.
+Text the current best model generates: "{best.get('sample', '')}"
+
+Last 5 successful changes (what has worked so far — do not limit yourself to repeating the same kind of change):
 {json.dumps(slim(recent_successes), indent=2)}
 
 Last 5 failed/rejected attempts to AVOID repeating:
 {json.dumps(slim(recent_failures), indent=2)}
+
+The 'steps' field shows how many gradient steps finished in the 60s budget — the speed cost of a change.
+Slower is acceptable if the final loss is better: acceptance is decided by loss alone.
+
+If progress is slowing, think about what limits the loss — speed, capacity, or how much context the model uses — and consider a more substantial change.
 
 Return exactly this format:
 
@@ -59,7 +67,7 @@ Rules:
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,                                     # moderate creativity; lower = more deterministic
-            max_tokens=2048,                                     # MLP code doesn't need more than 2k tokens
+            max_tokens=4096,                                     # room for larger rewrites
         )
         text = resp.choices[0].message.content
         print(f"[llm] Done in {time.time()-t0:.1f}s ({len(text)} chars)", flush=True)
